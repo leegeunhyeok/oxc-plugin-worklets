@@ -29,7 +29,7 @@ just snapshot # Update insta snapshots
 ## Testing
 
 ```bash
-just test                            # Run all tests
+just test # Run all tests
 ```
 
 Integration tests live in `tests/transform.rs` and use [insta](https://insta.rs/) for snapshot testing. Snapshots are stored in `tests/snapshots/`.
@@ -56,28 +56,13 @@ fn example(allocator: &Allocator, program: &mut Program<'_>) {
     let opts = PluginOptions {
         filename: Some("/path/to/file.js".to_string()),
         is_release: true,
+        plugin_version: "0.0.0", // Must be matched with the `react-native-worklets` runtime version
         ..Default::default()
     };
 
     let mut visitor = WorkletsVisitor::new(allocator, opts);
     visitor.visit_program(program).expect("transform failed");
 }
-```
-
-### Rolldown Integration
-
-```rust
-use oxc_plugin_worklets::{WorkletsVisitor, PluginOptions};
-
-ast.with_mut(|fields| {
-    let opts = PluginOptions {
-        filename: Some(filename.to_string()),
-        ..Default::default()
-    };
-    let mut visitor = WorkletsVisitor::new(fields.allocator, opts);
-    visitor.visit_program(fields.program)
-        .expect("worklets transform failed");
-});
 ```
 
 ## License
