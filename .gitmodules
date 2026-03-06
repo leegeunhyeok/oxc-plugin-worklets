@@ -1,0 +1,3 @@
+[submodule "react-native-reanmiated"]
+	path = react-native-reanmiated
+	url = https://github.com/software-mansion/react-native-reanimated.git

@@ -1,0 +1,14 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_7407244038443_init_data = { code: "(function foo_null1(){return 1})" };
+const foo = function foo_null1Factory({ _worklet_7407244038443_init_data }) {
+	const foo = function() {
+		return 1;
+	};
+	foo.__closure = {};
+	foo.__workletHash = 7407244038443;
+	foo.__initData = _worklet_7407244038443_init_data;
+	return foo;
+}({ _worklet_7407244038443_init_data });

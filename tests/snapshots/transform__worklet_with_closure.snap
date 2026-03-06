@@ -1,0 +1,28 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const a = 1;
+const _worklet_2726835275341_init_data = {
+	code: "(function foo_null1(x){const{a}=this.__closure;return x+a})",
+	location: "/dev/null"
+};
+const foo = function foo_null1Factory({ _worklet_2726835275341_init_data, a }) {
+	const _e = [
+		new global.Error(),
+		-2,
+		-27
+	];
+	const foo = function(x) {
+		return x + a;
+	};
+	foo.__closure = { a };
+	foo.__workletHash = 2726835275341;
+	foo.__pluginVersion = "x.y.z";
+	foo.__initData = _worklet_2726835275341_init_data;
+	foo.__stackDetails = _e;
+	return foo;
+}({
+	_worklet_2726835275341_init_data,
+	a
+});

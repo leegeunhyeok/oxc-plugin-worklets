@@ -1,0 +1,47 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_5884879088771_init_data = {
+	code: "(function outer_null2(){const{_worklet_13782519571410_init_data}=this.__closure;const inner=function null1Factory({_worklet_13782519571410_init_data}){const _e=[new global.Error,1,-27];const null1=function(){return 1};null1.__closure={};null1.__workletHash=0xc88fe2ee3d2;null1.__pluginVersion=`x.y.z`;null1.__initData=_worklet_13782519571410_init_data;null1.__stackDetails=_e;return null1}({_worklet_13782519571410_init_data});return inner})",
+	location: "/dev/null"
+};
+const _worklet_13782519571410_init_data = {
+	code: "(function null1(){return 1})",
+	location: "/dev/null"
+};
+const outer = function outer_null2Factory({ _worklet_5884879088771_init_data, _worklet_13782519571410_init_data }) {
+	const _e = [
+		new global.Error(),
+		-2,
+		-27
+	];
+	const outer = function() {
+		const inner = function null1Factory({ _worklet_13782519571410_init_data }) {
+			const _e = [
+				new global.Error(),
+				1,
+				-27
+			];
+			const null1 = function() {
+				return 1;
+			};
+			null1.__closure = {};
+			null1.__workletHash = 0xc88fe2ee3d2;
+			null1.__pluginVersion = "x.y.z";
+			null1.__initData = _worklet_13782519571410_init_data;
+			null1.__stackDetails = _e;
+			return null1;
+		}({ _worklet_13782519571410_init_data });
+		return inner;
+	};
+	outer.__closure = { _worklet_13782519571410_init_data };
+	outer.__workletHash = 5884879088771;
+	outer.__pluginVersion = "x.y.z";
+	outer.__initData = _worklet_5884879088771_init_data;
+	outer.__stackDetails = _e;
+	return outer;
+}({
+	_worklet_5884879088771_init_data,
+	_worklet_13782519571410_init_data
+});

@@ -1,0 +1,25 @@
+---
+source: tests/transform.rs
+expression: output
+---
+import { useAnimatedStyle } from "react-native-reanimated";
+const _worklet_445896339479_init_data = {
+	code: "(function null1(){return{opacity:1}})",
+	location: "/dev/null"
+};
+const style = useAnimatedStyle(function null1Factory({ _worklet_445896339479_init_data }) {
+	const _e = [
+		new global.Error(),
+		1,
+		-27
+	];
+	const null1 = function() {
+		return { opacity: 1 };
+	};
+	null1.__closure = {};
+	null1.__workletHash = 445896339479;
+	null1.__pluginVersion = "x.y.z";
+	null1.__initData = _worklet_445896339479_init_data;
+	null1.__stackDetails = _e;
+	return null1;
+}({ _worklet_445896339479_init_data }));

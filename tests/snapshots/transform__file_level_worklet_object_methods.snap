@@ -1,0 +1,24 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_15797049534130_init_data = {
+	code: "(function null1(){return`bar`})",
+	location: "/dev/null"
+};
+const foo = { bar: function null1Factory({ _worklet_15797049534130_init_data }) {
+	const _e = [
+		new global.Error(),
+		1,
+		-27
+	];
+	const null1 = function() {
+		return "bar";
+	};
+	null1.__closure = {};
+	null1.__workletHash = 0xe5e0986a6b2;
+	null1.__pluginVersion = "x.y.z";
+	null1.__initData = _worklet_15797049534130_init_data;
+	null1.__stackDetails = _e;
+	return null1;
+}({ _worklet_15797049534130_init_data }) };

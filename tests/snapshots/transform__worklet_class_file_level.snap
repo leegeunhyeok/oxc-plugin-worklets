@@ -1,0 +1,15 @@
+---
+source: tests/transform.rs
+expression: output
+---
+function Foo__classFactory() {
+	"worklet";
+	class Foo {
+		bar() {
+			return 1;
+		}
+	}
+	Foo.__classFactory = Foo__classFactory;
+	return Foo;
+}
+const Foo = Foo__classFactory();

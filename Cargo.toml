@@ -1,0 +1,10 @@
+[package]
+name = "oxc_plugin_worklets"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+oxc = { version = "0.115.0", features = ["full"] }
+
+[dev-dependencies]
+insta = { version = "1", features = ["glob"] }

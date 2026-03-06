@@ -1,0 +1,25 @@
+---
+source: tests/transform.rs
+expression: output
+---
+import { Gesture } from "react-native-gesture-handler";
+const _worklet_6091716764897_init_data = {
+	code: "(function null1(){console.log(`tapped`)})",
+	location: "/dev/null"
+};
+const g = Gesture.Tap().onEnd(function null1Factory({ _worklet_6091716764897_init_data }) {
+	const _e = [
+		new global.Error(),
+		1,
+		-27
+	];
+	const null1 = function() {
+		console.log("tapped");
+	};
+	null1.__closure = {};
+	null1.__workletHash = 6091716764897;
+	null1.__pluginVersion = "x.y.z";
+	null1.__initData = _worklet_6091716764897_init_data;
+	null1.__stackDetails = _e;
+	return null1;
+}({ _worklet_6091716764897_init_data }));

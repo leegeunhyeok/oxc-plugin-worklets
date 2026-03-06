@@ -1,0 +1,25 @@
+---
+source: tests/transform.rs
+expression: output
+---
+import { useDerivedValue } from "react-native-reanimated";
+const _worklet_9424717214629_init_data = {
+	code: "(function null1(){return 42})",
+	location: "/dev/null"
+};
+const val = useDerivedValue(function null1Factory({ _worklet_9424717214629_init_data }) {
+	const _e = [
+		new global.Error(),
+		1,
+		-27
+	];
+	const null1 = function() {
+		return 42;
+	};
+	null1.__closure = {};
+	null1.__workletHash = 9424717214629;
+	null1.__pluginVersion = "x.y.z";
+	null1.__initData = _worklet_9424717214629_init_data;
+	null1.__stackDetails = _e;
+	return null1;
+}({ _worklet_9424717214629_init_data }));

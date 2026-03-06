@@ -1,0 +1,39 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_13971602963718_init_data = {
+	code: "(function null1(){return{bar(){return`bar`},foobar(){return this.bar()}}})",
+	location: "/dev/null"
+};
+const foo = {
+	bar() {
+		return "bar";
+	},
+	foobar() {
+		return this.bar();
+	},
+	__workletContextObjectFactory: function null1Factory({ _worklet_13971602963718_init_data }) {
+		const _e = [
+			new global.Error(),
+			1,
+			-27
+		];
+		const null1 = function() {
+			return {
+				bar() {
+					return "bar";
+				},
+				foobar() {
+					return this.bar();
+				}
+			};
+		};
+		null1.__closure = {};
+		null1.__workletHash = 0xcb5046e7d06;
+		null1.__pluginVersion = "x.y.z";
+		null1.__initData = _worklet_13971602963718_init_data;
+		null1.__stackDetails = _e;
+		return null1;
+	}({ _worklet_13971602963718_init_data })
+};

@@ -1,0 +1,25 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_10874305878073_init_data = {
+	code: "(function styleFactory_null1(){return{}})",
+	location: "/dev/null"
+};
+const styleFactory = function styleFactory_null1Factory({ _worklet_10874305878073_init_data }) {
+	const _e = [
+		new global.Error(),
+		1,
+		-27
+	];
+	const styleFactory = function() {
+		return {};
+	};
+	styleFactory.__closure = {};
+	styleFactory.__workletHash = 0x9e3df239839;
+	styleFactory.__pluginVersion = "x.y.z";
+	styleFactory.__initData = _worklet_10874305878073_init_data;
+	styleFactory.__stackDetails = _e;
+	return styleFactory;
+}({ _worklet_10874305878073_init_data });
+const animatedStyle = useAnimatedStyle(styleFactory);

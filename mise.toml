@@ -1,0 +1,4 @@
+[tools]
+just = "latest"
+node = "24.12.0"
+rust = "1.93.1"
