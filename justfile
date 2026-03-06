@@ -9,6 +9,10 @@ test:
 build:
     cargo build
 
+# Build the project in release mode
+build-release:
+    cargo build --release
+
 # Check formatting and lints
 lint:
     cargo fmt --check
