@@ -43,6 +43,19 @@ just release 0.2.0
 # → push to main triggers cargo publish via CI
 ```
 
+## Benchmark
+
+Measured on Apple M1 Pro, 100 iterations over a [fixture](bench/fixture.ts) containing ~20 worklet patterns.
+
+|                              |        Total | Avg / transform |  Speedup |
+| ---------------------------- | -----------: | --------------: | -------: |
+| react-native-worklets/plugin |   7156.04 ms |        71.56 ms |       1x |
+| **oxc_plugin_worklets**      | **85.81 ms** |     **0.86 ms** | **~83x** |
+
+```bash
+just bench # run benchmark
+```
+
 ## Usage
 
 ### API

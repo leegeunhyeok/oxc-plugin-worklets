@@ -23,6 +23,14 @@ snapshot:
     cargo insta test
     cargo insta review
 
+# Install benchmark dependencies
+setup:
+    cd bench/babel && npm install
+
+# Run benchmark: Babel vs oxc
+bench:
+    ./bench/run.sh
+
 # Bump version and create release commit
 release version:
     #!/usr/bin/env bash

@@ -1,0 +1,9 @@
+[package]
+name = "bench_oxc"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+oxc_plugin_worklets = { path = "../.." }
+oxc = { version = "0.115.0", features = ["full"] }
