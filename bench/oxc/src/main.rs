@@ -8,7 +8,7 @@ use oxc::codegen::Codegen;
 use oxc::parser::Parser;
 use oxc::span::SourceType;
 
-use oxc_plugin_worklets::{PluginOptions, WorkletsVisitor};
+use oxc_plugin_worklets::{WorkletsOptions, WorkletsVisitor};
 
 fn main() {
     let n: u32 = env::args()
@@ -24,7 +24,7 @@ fn main() {
     let source = fs::read_to_string(&fixture_path).expect("failed to read fixture");
     let source_type = SourceType::tsx();
 
-    let opts = PluginOptions {
+    let opts = WorkletsOptions {
         plugin_version: "bench".to_string(),
         filename: Some("fixture.ts".to_string()),
         ..Default::default()

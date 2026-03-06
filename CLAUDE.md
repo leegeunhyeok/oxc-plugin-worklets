@@ -49,7 +49,7 @@ pub struct WorkletsVisitor<'a> {
 }
 
 impl<'a> WorkletsVisitor<'a> {
-    pub fn new(allocator: &'a Allocator, options: PluginOptions) -> Self {
+    pub fn new(allocator: &'a Allocator, options: WorkletsOptions) -> Self {
         // ...
     }
 
@@ -73,7 +73,7 @@ impl Plugin for ReactNativeWorkletsPlugin {
         mut args: HookTransformAstArgs<'_>,
     ) -> HookTransformAstReturn {
         args.ast.program.with_mut(|fields| {
-            let mut visitor = WorkletsVisitor::new(fields.allocator, PluginOptions::default());
+            let mut visitor = WorkletsVisitor::new(fields.allocator, WorkletsOptions::default());
             visitor.visit_program(fields.program)?;
             Ok(())
         })?;

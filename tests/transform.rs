@@ -2,10 +2,10 @@ use oxc::allocator::Allocator;
 use oxc::parser::Parser;
 use oxc::span::SourceType;
 
-use oxc_plugin_worklets::{PluginOptions, WorkletsVisitor};
+use oxc_plugin_worklets::{WorkletsOptions, WorkletsVisitor};
 
-fn default_opts() -> PluginOptions {
-    PluginOptions {
+fn default_opts() -> WorkletsOptions {
+    WorkletsOptions {
         plugin_version: "x.y.z".to_string(),
         ..Default::default()
     }
@@ -33,7 +33,7 @@ fn run_plugin_ts(input: &str) -> String {
     codegen.build(&program).code
 }
 
-fn run_plugin_with_opts(input: &str, mut opts: PluginOptions, filename: &str) -> String {
+fn run_plugin_with_opts(input: &str, mut opts: WorkletsOptions, filename: &str) -> String {
     opts.filename = Some(filename.to_string());
     let allocator = Allocator::default();
     let source_type = SourceType::mjs();
@@ -253,7 +253,7 @@ function foo() {
 "#;
     let output = run_plugin_with_opts(
         input,
-        PluginOptions {
+        WorkletsOptions {
             is_release: true,
             ..default_opts()
         },
@@ -278,7 +278,7 @@ function foo() {
 "#;
     let output = run_plugin_with_opts(
         input,
-        PluginOptions {
+        WorkletsOptions {
             is_release: true,
             ..default_opts()
         },
@@ -390,7 +390,7 @@ function foo() {
 "#;
     let output = run_plugin_with_opts(
         input,
-        PluginOptions {
+        WorkletsOptions {
             is_release: true,
             ..default_opts()
         },
@@ -671,7 +671,7 @@ class Foo {
 "#;
     let output = run_plugin_with_opts(
         input,
-        PluginOptions {
+        WorkletsOptions {
             disable_worklet_classes: true,
             ..default_opts()
         },

@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Default)]
-pub struct PluginOptions {
+pub struct WorkletsOptions {
     /// List of identifiers that will not be captured in worklet closures.
     pub globals: Vec<String>,
 

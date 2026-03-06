@@ -63,10 +63,10 @@ just bench # run benchmark
 ```rust
 use oxc::allocator::Allocator;
 use oxc::ast::ast::Program;
-use oxc_plugin_worklets::{WorkletsVisitor, PluginOptions};
+use oxc_plugin_worklets::{WorkletsVisitor, WorkletsOptions};
 
 fn example(allocator: &Allocator, program: &mut Program<'_>) {
-    let opts = PluginOptions {
+    let opts = WorkletsOptions {
         filename: Some("/path/to/file.js".to_string()),
         is_release: true,
         plugin_version: "0.0.0", // Must be matched with the `react-native-worklets` runtime version

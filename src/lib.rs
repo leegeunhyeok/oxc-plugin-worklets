@@ -7,11 +7,21 @@ mod layout_animation_autoworkletization;
 mod options;
 mod types;
 mod worklet_factory;
+
 use std::collections::HashSet;
-
-pub use options::PluginOptions;
-
+use std::path::Path;
 use std::sync::LazyLock;
+
+use oxc::allocator::{Allocator, Box as OxcBox, CloneIn};
+use oxc::ast::ast::*;
+use oxc::ast::AstBuilder;
+use oxc::codegen::{Codegen, CodegenOptions};
+use oxc::parser::Parser;
+use oxc::semantic::SemanticBuilder;
+use oxc::span::{SourceType, SPAN};
+use oxc::transformer::{TransformOptions, Transformer};
+
+pub use options::WorkletsOptions;
 
 static WORKLET_PATTERNS: LazyLock<aho_corasick::AhoCorasick> = LazyLock::new(|| {
     aho_corasick::AhoCorasick::new([
@@ -49,17 +59,6 @@ pub fn may_contain_worklets(code: &str) -> bool {
     WORKLET_PATTERNS.is_match(code)
 }
 
-use std::path::Path;
-
-use oxc::allocator::{Allocator, Box as OxcBox, CloneIn};
-use oxc::ast::ast::*;
-use oxc::ast::AstBuilder;
-use oxc::codegen::{Codegen, CodegenOptions};
-use oxc::parser::Parser;
-use oxc::semantic::SemanticBuilder;
-use oxc::span::{SourceType, SPAN};
-use oxc::transformer::{TransformOptions, Transformer};
-
 use crate::autoworkletization::{
     get_args_to_workletize, is_reanimated_function_hook, is_reanimated_object_hook,
 };
@@ -83,7 +82,7 @@ impl std::error::Error for WorkletsError {}
 
 pub struct WorkletsVisitor<'a> {
     allocator: &'a Allocator,
-    options: PluginOptions,
+    options: WorkletsOptions,
     globals: HashSet<String>,
     filename: String,
     worklet_number: u32,
@@ -91,7 +90,7 @@ pub struct WorkletsVisitor<'a> {
 }
 
 impl<'a> WorkletsVisitor<'a> {
-    pub fn new(allocator: &'a Allocator, options: PluginOptions) -> Self {
+    pub fn new(allocator: &'a Allocator, options: WorkletsOptions) -> Self {
         let globals = if options.strict_global {
             HashSet::new()
         } else {
@@ -1370,7 +1369,7 @@ fn build_init_data_declaration<'a>(
     source_map_json: Option<String>,
     filename: &str,
     is_release: bool,
-    options: &PluginOptions,
+    options: &WorkletsOptions,
     allocator: &'a Allocator,
 ) -> Statement<'a> {
     let mut props = ast.vec();
