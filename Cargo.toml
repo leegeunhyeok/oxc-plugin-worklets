@@ -1,7 +1,10 @@
 [package]
 name = "oxc_plugin_worklets"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
+description = "A Rust port of React Native Reanimated's worklets plugin"
+license = "MIT"
+repository = "https://github.com/leegeunhyeok/oxc-plugin-worklets"
 
 [dependencies]
 oxc = { version = "0.115.0", features = ["full"] }
