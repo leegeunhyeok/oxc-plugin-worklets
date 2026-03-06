@@ -126,6 +126,8 @@ fn process_statement<'a>(
                 process_inner_worklets_in_function(func, stmt_idx, ctx)?;
                 let replacement = transform_worklet_function(func, stmt_idx, ctx)?;
                 *stmt = replacement;
+            } else {
+                process_inner_worklets_in_function(func, stmt_idx, ctx)?;
             }
         }
         Statement::VariableDeclaration(var_decl) => {
@@ -166,6 +168,8 @@ fn process_statement<'a>(
                     let ast = AstBuilder::new(ctx.allocator);
                     let call_expr = Expression::CallExpression(ast.alloc(factory_call));
                     export.declaration = ExportDefaultDeclarationKind::from(call_expr);
+                } else {
+                    process_inner_worklets_in_function(func, stmt_idx, ctx)?;
                 }
             }
         }
@@ -186,6 +190,8 @@ fn process_statement<'a>(
                             let call_expr = Expression::CallExpression(ast.alloc(factory_call));
                             let var_decl = build_const_declaration(&ast, name, call_expr);
                             *decl = Declaration::VariableDeclaration(ast.alloc(var_decl));
+                        } else {
+                            process_inner_worklets_in_function(func, stmt_idx, ctx)?;
                         }
                     }
                     Declaration::VariableDeclaration(var_decl) => {

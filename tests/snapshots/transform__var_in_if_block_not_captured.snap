@@ -1,0 +1,27 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_8584571801988_init_data = {
+	code: "(function foo_null1(x){if(x>0){var result=x*2}return result})",
+	location: "/dev/null"
+};
+const foo = function foo_null1Factory({ _worklet_8584571801988_init_data }) {
+	const _e = [
+		new global.Error(),
+		1,
+		-27
+	];
+	const foo = function(x) {
+		if (x > 0) {
+			var result = x * 2;
+		}
+		return result;
+	};
+	foo.__closure = {};
+	foo.__workletHash = 8584571801988;
+	foo.__pluginVersion = "x.y.z";
+	foo.__initData = _worklet_8584571801988_init_data;
+	foo.__stackDetails = _e;
+	return foo;
+}({ _worklet_8584571801988_init_data });

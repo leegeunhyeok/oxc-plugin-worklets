@@ -141,6 +141,10 @@ impl<'g> ClosureCollector<'g> {
         }
     }
 
+    /// Collects all bindings at the function's top-level scope:
+    /// - All variable declarations (var/let/const)
+    /// - Function and class declarations
+    /// - Hoisted `var` declarations from nested blocks (recursively)
     fn collect_block_bindings_from_stmts(&mut self, stmts: &[Statement]) {
         for stmt in stmts {
             match stmt {
@@ -162,8 +166,13 @@ impl<'g> ClosureCollector<'g> {
                 _ => {}
             }
         }
+        // Also collect hoisted `var` declarations from nested blocks
+        for stmt in stmts {
+            self.collect_hoisted_vars_from_stmt(stmt);
+        }
     }
 
+    /// Collects block-scoped bindings (let/const/function) for nested blocks.
     fn collect_block_scoped_bindings(&mut self, stmts: &[Statement]) {
         for stmt in stmts {
             match stmt {
@@ -184,6 +193,98 @@ impl<'g> ClosureCollector<'g> {
                 }
                 _ => {}
             }
+        }
+    }
+
+    /// Recursively collects `var` declarations from nested statements.
+    /// `var` is function-scoped (hoisted), so vars inside for/if/try/catch/blocks
+    /// must be registered at the function's top-level scope.
+    /// Does NOT recurse into nested functions/arrows (they have their own scope).
+    fn collect_hoisted_vars_from_stmt(&mut self, stmt: &Statement) {
+        match stmt {
+            // Skip top-level var declarations (already collected by collect_block_bindings_from_stmts)
+            Statement::VariableDeclaration(_) => {}
+            Statement::BlockStatement(block) => {
+                self.collect_hoisted_vars_from_stmts(&block.body);
+            }
+            Statement::IfStatement(if_stmt) => {
+                self.collect_hoisted_vars_from_stmt(&if_stmt.consequent);
+                if let Some(alt) = &if_stmt.alternate {
+                    self.collect_hoisted_vars_from_stmt(alt);
+                }
+            }
+            Statement::ForStatement(for_stmt) => {
+                if let Some(ForStatementInit::VariableDeclaration(decl)) = &for_stmt.init {
+                    if matches!(decl.kind, VariableDeclarationKind::Var) {
+                        for d in &decl.declarations {
+                            self.collect_binding_pattern(&d.id);
+                        }
+                    }
+                }
+                self.collect_hoisted_vars_from_stmt(&for_stmt.body);
+            }
+            Statement::ForInStatement(for_in) => {
+                if let ForStatementLeft::VariableDeclaration(decl) = &for_in.left {
+                    if matches!(decl.kind, VariableDeclarationKind::Var) {
+                        for d in &decl.declarations {
+                            self.collect_binding_pattern(&d.id);
+                        }
+                    }
+                }
+                self.collect_hoisted_vars_from_stmt(&for_in.body);
+            }
+            Statement::ForOfStatement(for_of) => {
+                if let ForStatementLeft::VariableDeclaration(decl) = &for_of.left {
+                    if matches!(decl.kind, VariableDeclarationKind::Var) {
+                        for d in &decl.declarations {
+                            self.collect_binding_pattern(&d.id);
+                        }
+                    }
+                }
+                self.collect_hoisted_vars_from_stmt(&for_of.body);
+            }
+            Statement::WhileStatement(while_stmt) => {
+                self.collect_hoisted_vars_from_stmt(&while_stmt.body);
+            }
+            Statement::DoWhileStatement(do_while) => {
+                self.collect_hoisted_vars_from_stmt(&do_while.body);
+            }
+            Statement::SwitchStatement(switch) => {
+                for case in &switch.cases {
+                    self.collect_hoisted_vars_from_stmts(&case.consequent);
+                }
+            }
+            Statement::TryStatement(try_stmt) => {
+                self.collect_hoisted_vars_from_stmts(&try_stmt.block.body);
+                if let Some(handler) = &try_stmt.handler {
+                    self.collect_hoisted_vars_from_stmts(&handler.body.body);
+                }
+                if let Some(finalizer) = &try_stmt.finalizer {
+                    self.collect_hoisted_vars_from_stmts(&finalizer.body);
+                }
+            }
+            Statement::LabeledStatement(labeled) => {
+                self.collect_hoisted_vars_from_stmt(&labeled.body);
+            }
+            Statement::WithStatement(with) => {
+                self.collect_hoisted_vars_from_stmt(&with.body);
+            }
+            _ => {}
+        }
+    }
+
+    fn collect_hoisted_vars_from_stmts(&mut self, stmts: &[Statement]) {
+        for stmt in stmts {
+            // Collect var declarations at this level
+            if let Statement::VariableDeclaration(decl) = stmt {
+                if matches!(decl.kind, VariableDeclarationKind::Var) {
+                    for d in &decl.declarations {
+                        self.collect_binding_pattern(&d.id);
+                    }
+                }
+            }
+            // Recurse into nested structures
+            self.collect_hoisted_vars_from_stmt(stmt);
         }
     }
 }

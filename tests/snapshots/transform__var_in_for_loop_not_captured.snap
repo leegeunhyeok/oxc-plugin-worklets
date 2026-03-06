@@ -1,0 +1,27 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_12239298383326_init_data = {
+	code: "(function foo_null1(fn){for(var _len=arguments.length,args=new Array(_len>1?_len-1:0),_key=1;_key<_len;_key++){args[_key-1]=arguments[_key]}return fn.apply(void 0,args)})",
+	location: "/dev/null"
+};
+const foo = function foo_null1Factory({ _worklet_12239298383326_init_data }) {
+	const _e = [
+		new global.Error(),
+		1,
+		-27
+	];
+	const foo = function(fn) {
+		for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+			args[_key - 1] = arguments[_key];
+		}
+		return fn.apply(void 0, args);
+	};
+	foo.__closure = {};
+	foo.__workletHash = 0xb21af084dde;
+	foo.__pluginVersion = "x.y.z";
+	foo.__initData = _worklet_12239298383326_init_data;
+	foo.__stackDetails = _e;
+	return foo;
+}({ _worklet_12239298383326_init_data });

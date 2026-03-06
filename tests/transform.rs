@@ -664,3 +664,107 @@ class Foo {
         output
     );
 }
+
+// --- Var hoisting in closure analysis ---
+
+#[test]
+fn test_var_in_for_loop_not_captured() {
+    // Simulates Rolldown's rest parameter transformation:
+    // ...args becomes for(var args = ...) which is function-scoped via var hoisting
+    let input = r#"
+function foo(fn) {
+    'worklet';
+    for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        args[_key - 1] = arguments[_key];
+    }
+    return fn.apply(void 0, args);
+}
+"#;
+    let output = run_plugin(input);
+    // args, _len, _key are var-declared inside for loop — should NOT be captured
+    assert!(
+        !output.contains("\"args\"") && !output.contains("args:"),
+        "args should not be in closure: {}",
+        output
+    );
+    insta::assert_snapshot!("var_in_for_loop_not_captured", output);
+}
+
+#[test]
+fn test_var_in_catch_block_not_captured() {
+    // var declarations inside catch/if blocks are hoisted to function scope
+    let input = r#"
+function foo() {
+    'worklet';
+    try {
+        doSomething();
+    } catch (error) {
+        if (globalThis.handler) {
+            var message = error.message, stack = error.stack;
+            globalThis.handler(message, stack);
+        }
+    }
+}
+"#;
+    let output = run_plugin(input);
+    // message, stack are var-declared inside catch/if — should NOT be captured
+    assert!(
+        !output.contains("\"message\"") && !output.contains("message:"),
+        "message should not be in closure: {}",
+        output
+    );
+    assert!(
+        !output.contains("\"stack\"") && !output.contains("stack:"),
+        "stack should not be in closure: {}",
+        output
+    );
+    insta::assert_snapshot!("var_in_catch_block_not_captured", output);
+}
+
+#[test]
+fn test_var_in_if_block_not_captured() {
+    let input = r#"
+function foo(x) {
+    'worklet';
+    if (x > 0) {
+        var result = x * 2;
+    }
+    return result;
+}
+"#;
+    let output = run_plugin(input);
+    assert!(
+        !output.contains("\"result\"") && !output.contains("result:"),
+        "result should not be in closure: {}",
+        output
+    );
+    insta::assert_snapshot!("var_in_if_block_not_captured", output);
+}
+
+// --- Nested worklet inside non-worklet function ---
+
+#[test]
+fn test_worklet_inside_non_worklet_function() {
+    // Simulates Rolldown output where a worklet is inside an if block
+    // inside a regular (non-worklet) function
+    let input = r#"
+function initializeRNRuntime() {
+    if (true) {
+        var testWorklet = function testWorklet() {
+            "worklet";
+        };
+        if (!isWorkletFunction(testWorklet)) {
+            throw new Error("fail");
+        }
+    }
+    registerReportFatalRemoteError();
+}
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "nested worklet should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_inside_non_worklet_function", output);
+}

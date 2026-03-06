@@ -1,0 +1,30 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_5422551871900_init_data = {
+	code: "(function testWorklet_null1(){})",
+	location: "/dev/null"
+};
+function initializeRNRuntime() {
+	if (true) {
+		var testWorklet = function testWorklet_null1Factory({ _worklet_5422551871900_init_data }) {
+			const _e = [
+				new global.Error(),
+				1,
+				-27
+			];
+			const testWorklet = function() {};
+			testWorklet.__closure = {};
+			testWorklet.__workletHash = 5422551871900;
+			testWorklet.__pluginVersion = "x.y.z";
+			testWorklet.__initData = _worklet_5422551871900_init_data;
+			testWorklet.__stackDetails = _e;
+			return testWorklet;
+		}({ _worklet_5422551871900_init_data });
+		if (!isWorkletFunction(testWorklet)) {
+			throw new Error("fail");
+		}
+	}
+	registerReportFatalRemoteError();
+}
