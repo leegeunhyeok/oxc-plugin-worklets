@@ -26,4 +26,8 @@ pub struct PluginOptions {
 
     /// If true, this is a release build (skips debug info like stack details, version, location).
     pub is_release: bool,
+
+    /// The version string to embed as `__pluginVersion`.
+    /// Injected from the JS side (e.g. the installed react-native-worklets package version).
+    pub plugin_version: String,
 }

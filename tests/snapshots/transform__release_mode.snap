@@ -2,13 +2,13 @@
 source: tests/transform.rs
 expression: output
 ---
-const _worklet_7407244038443_init_data = { code: "(function foo_null1(){return 1})" };
-const foo = function foo_null1Factory({ _worklet_7407244038443_init_data }) {
+const _worklet_1397870550576_init_data = { code: "(function foo_null1(){return 1;})" };
+const foo = function foo_null1Factory({ _worklet_1397870550576_init_data }) {
 	const foo = function() {
 		return 1;
 	};
 	foo.__closure = {};
-	foo.__workletHash = 7407244038443;
-	foo.__initData = _worklet_7407244038443_init_data;
+	foo.__workletHash = 1397870550576;
+	foo.__initData = _worklet_1397870550576_init_data;
 	return foo;
-}({ _worklet_7407244038443_init_data });
+}({ _worklet_1397870550576_init_data });

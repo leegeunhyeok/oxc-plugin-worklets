@@ -2,11 +2,12 @@
 source: tests/transform.rs
 expression: output
 ---
-const _worklet_11527789230625_init_data = {
-	code: "(async function foo_null1(){const{bar}=this.__closure;await bar()})",
-	location: "/dev/null"
+const _worklet_3389766325603_init_data = {
+	code: "(async function foo_null1(){var bar=this.__closure.bar;await bar();})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(async function foo_null1(){const{bar}=this.__closure;await bar()});\"],\"mappings\":\"CAAC,eAAe,WAAW,CAAC,KAAK,CAAC,KAAK,KAAK,UAAU,MAAM,KAAK\"}"
 };
-const foo = function foo_null1Factory({ _worklet_11527789230625_init_data, bar }) {
+const foo = function foo_null1Factory({ _worklet_3389766325603_init_data, bar }) {
 	const _e = [
 		new global.Error(),
 		-2,
@@ -16,12 +17,12 @@ const foo = function foo_null1Factory({ _worklet_11527789230625_init_data, bar }
 		await bar();
 	};
 	foo.__closure = { bar };
-	foo.__workletHash = 0xa7c05c83a21;
+	foo.__workletHash = 3389766325603;
 	foo.__pluginVersion = "x.y.z";
-	foo.__initData = _worklet_11527789230625_init_data;
+	foo.__initData = _worklet_3389766325603_init_data;
 	foo.__stackDetails = _e;
 	return foo;
 }({
-	_worklet_11527789230625_init_data,
+	_worklet_3389766325603_init_data,
 	bar
 });

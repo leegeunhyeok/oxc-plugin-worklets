@@ -2,11 +2,12 @@
 source: tests/transform.rs
 expression: output
 ---
-const _worklet_7407244038443_init_data = {
-	code: "(function foo_null1(){return 1})",
-	location: "/dev/null"
+const _worklet_1397870550576_init_data = {
+	code: "(function foo_null1(){return 1;})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function foo_null1(){return 1});\"],\"mappings\":\"CAAC,SAAS,WAAW,CAAC,MAAO\"}"
 };
-export default (function foo_null1Factory({ _worklet_7407244038443_init_data }) {
+export default (function foo_null1Factory({ _worklet_1397870550576_init_data }) {
 	const _e = [
 		new global.Error(),
 		1,
@@ -16,9 +17,9 @@ export default (function foo_null1Factory({ _worklet_7407244038443_init_data }) 
 		return 1;
 	};
 	foo.__closure = {};
-	foo.__workletHash = 7407244038443;
+	foo.__workletHash = 1397870550576;
 	foo.__pluginVersion = "x.y.z";
-	foo.__initData = _worklet_7407244038443_init_data;
+	foo.__initData = _worklet_1397870550576_init_data;
 	foo.__stackDetails = _e;
 	return foo;
-})({ _worklet_7407244038443_init_data });
+})({ _worklet_1397870550576_init_data });

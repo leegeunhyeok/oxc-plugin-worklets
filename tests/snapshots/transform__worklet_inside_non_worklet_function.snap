@@ -4,7 +4,8 @@ expression: output
 ---
 const _worklet_5422551871900_init_data = {
 	code: "(function testWorklet_null1(){})",
-	location: "/dev/null"
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function testWorklet_null1(){});\"],\"mappings\":\"CAAC,SAAS,mBAAmB\"}"
 };
 function initializeRNRuntime() {
 	if (true) {

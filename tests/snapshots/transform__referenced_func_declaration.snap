@@ -2,11 +2,12 @@
 source: tests/transform.rs
 expression: output
 ---
-const _worklet_10874305878073_init_data = {
-	code: "(function styleFactory_null1(){return{}})",
-	location: "/dev/null"
+const _worklet_9076365995074_init_data = {
+	code: "(function styleFactory_null1(){return{};})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function styleFactory_null1(){return{}});\"],\"mappings\":\"CAAC,SAAS,oBAAoB,CAAC,MAAM,EAAE\"}"
 };
-const styleFactory = function styleFactory_null1Factory({ _worklet_10874305878073_init_data }) {
+const styleFactory = function styleFactory_null1Factory({ _worklet_9076365995074_init_data }) {
 	const _e = [
 		new global.Error(),
 		1,
@@ -16,10 +17,10 @@ const styleFactory = function styleFactory_null1Factory({ _worklet_1087430587807
 		return {};
 	};
 	styleFactory.__closure = {};
-	styleFactory.__workletHash = 0x9e3df239839;
+	styleFactory.__workletHash = 9076365995074;
 	styleFactory.__pluginVersion = "x.y.z";
-	styleFactory.__initData = _worklet_10874305878073_init_data;
+	styleFactory.__initData = _worklet_9076365995074_init_data;
 	styleFactory.__stackDetails = _e;
 	return styleFactory;
-}({ _worklet_10874305878073_init_data });
+}({ _worklet_9076365995074_init_data });
 const animatedStyle = useAnimatedStyle(styleFactory);

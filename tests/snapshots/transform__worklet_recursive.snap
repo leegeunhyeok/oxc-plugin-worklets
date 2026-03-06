@@ -3,11 +3,12 @@ source: tests/transform.rs
 expression: output
 ---
 const a = 1;
-const _worklet_12426225952261_init_data = {
-	code: "(function foo_null1(t){const{a}=this.__closure;const foo=this._recur;if(t>0){return a+foo(t-1)}})",
-	location: "/dev/null"
+const _worklet_7560605000887_init_data = {
+	code: "(function foo_null1(t){var a=this.__closure.a;var foo=this._recur;if(t>0){return a+foo(t-1);}})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function foo_null1(t){const{a}=this.__closure;const foo=this._recur;if(t>0){return a+foo(t-1)}});\"],\"mappings\":\"CAAC,SAAS,UAAU,EAAE,CAAC,KAAK,CAAC,GAAG,KAAK,UAAU,MAAM,IAAI,KAAK,OAAO,GAAG,EAAE,EAAE,CAAC,OAAO,EAAE,IAAI,EAAE,EAAE\"}"
 };
-const foo = function foo_null1Factory({ _worklet_12426225952261_init_data, a }) {
+const foo = function foo_null1Factory({ _worklet_7560605000887_init_data, a }) {
 	const _e = [
 		new global.Error(),
 		-2,
@@ -19,12 +20,12 @@ const foo = function foo_null1Factory({ _worklet_12426225952261_init_data, a }) 
 		}
 	};
 	foo.__closure = { a };
-	foo.__workletHash = 0xb4d34c8a605;
+	foo.__workletHash = 7560605000887;
 	foo.__pluginVersion = "x.y.z";
-	foo.__initData = _worklet_12426225952261_init_data;
+	foo.__initData = _worklet_7560605000887_init_data;
 	foo.__stackDetails = _e;
 	return foo;
 }({
-	_worklet_12426225952261_init_data,
+	_worklet_7560605000887_init_data,
 	a
 });

@@ -1,2 +1,5 @@
 [target.'cfg(all())']
-rustflags = ["-A", "clippy::collapsible-match"]
+rustflags = [
+  "-A", "clippy::collapsible-match",
+  "-A", "clippy::too_many_arguments"
+]

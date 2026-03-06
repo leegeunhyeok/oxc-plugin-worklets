@@ -4,8 +4,33 @@ use oxc::span::SourceType;
 
 use oxc_plugin_worklets::{PluginOptions, WorkletsVisitor};
 
+fn default_opts() -> PluginOptions {
+    PluginOptions {
+        plugin_version: "x.y.z".to_string(),
+        ..Default::default()
+    }
+}
+
 fn run_plugin(input: &str) -> String {
-    run_plugin_with_opts(input, PluginOptions::default(), "/dev/null")
+    run_plugin_with_opts(input, default_opts(), "/dev/null")
+}
+
+fn run_plugin_ts(input: &str) -> String {
+    let mut opts = default_opts();
+    opts.filename = Some("/dev/null".to_string());
+    let allocator = Allocator::default();
+    let source_type = SourceType::tsx();
+    let ret = Parser::new(&allocator, input, source_type).parse();
+    assert!(ret.errors.is_empty(), "Parse errors: {:?}", ret.errors);
+
+    let mut program = ret.program;
+    let mut visitor = WorkletsVisitor::new(&allocator, opts);
+    visitor
+        .visit_program(&mut program)
+        .expect("transform should succeed");
+
+    let codegen = oxc::codegen::Codegen::new();
+    codegen.build(&program).code
 }
 
 fn run_plugin_with_opts(input: &str, mut opts: PluginOptions, filename: &str) -> String {
@@ -230,7 +255,7 @@ function foo() {
         input,
         PluginOptions {
             is_release: true,
-            ..Default::default()
+            ..default_opts()
         },
         "/source.js",
     );
@@ -255,7 +280,7 @@ function foo() {
         input,
         PluginOptions {
             is_release: true,
-            ..Default::default()
+            ..default_opts()
         },
         "/node_modules/library/source.js",
     );
@@ -367,7 +392,7 @@ function foo() {
         input,
         PluginOptions {
             is_release: true,
-            ..Default::default()
+            ..default_opts()
         },
         "/dev/null",
     );
@@ -648,7 +673,7 @@ class Foo {
         input,
         PluginOptions {
             disable_worklet_classes: true,
-            ..Default::default()
+            ..default_opts()
         },
         "/dev/null",
     );
@@ -767,4 +792,296 @@ function initializeRNRuntime() {
         output
     );
     insta::assert_snapshot!("worklet_inside_non_worklet_function", output);
+}
+
+#[test]
+fn worklet_in_call_argument() {
+    let input = r#"
+function runOnUISync(worklet) {}
+function createSerializable(fn) {}
+
+const result = runOnUISync(createSerializable(function() {
+    'worklet';
+    return 42;
+}));
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet in call argument should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_in_call_argument", output);
+}
+
+#[test]
+fn worklet_arrow_in_call_argument() {
+    let input = r#"
+const result = someCall(wrapFn(() => {
+    'worklet';
+    return 1 + 2;
+}));
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet arrow in call argument should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_arrow_in_call_argument", output);
+}
+
+#[test]
+fn worklet_inside_try_catch() {
+    let input = r#"
+function init() {
+    try {
+        const w = function() {
+            'worklet';
+            return 1;
+        };
+    } catch (e) {
+        const handler = () => {
+            'worklet';
+            return 2;
+        };
+    }
+}
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet inside try/catch should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_inside_try_catch", output);
+}
+
+#[test]
+fn worklet_inside_for_loop() {
+    let input = r#"
+function setup() {
+    for (let i = 0; i < 10; i++) {
+        const w = function() {
+            'worklet';
+            return i;
+        };
+    }
+}
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet inside for loop should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_inside_for_loop", output);
+}
+
+#[test]
+fn worklet_inside_switch() {
+    let input = r#"
+function handle(type) {
+    switch (type) {
+        case 'a':
+            const w = function() { 'worklet'; return 1; };
+            break;
+    }
+}
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet inside switch should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_inside_switch", output);
+}
+
+#[test]
+fn worklet_with_await() {
+    let input = r#"
+async function init() {
+    const result = await createWorklet(function() {
+        'worklet';
+        return 42;
+    });
+}
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet inside await should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_with_await", output);
+}
+
+#[test]
+fn worklet_strips_typescript_types() {
+    let input = r#"
+function callGuard<Args extends unknown[], ReturnValue>(
+    fn: (...args: Args) => ReturnValue,
+    ...args: Args
+): ReturnValue | void {
+    'worklet';
+    try {
+        return fn(...args);
+    } catch (error) {
+        const { message, stack } = error as Error;
+        console.log(message, stack ?? '');
+    }
+}
+"#;
+    let output = run_plugin_ts(input);
+    // Extract the code string from init_data (the string inside `code: "..."`)
+    let code_start = output.find("code: \"").expect("should have code field") + 7;
+    let code_end = output[code_start..]
+        .find("\",")
+        .or_else(|| output[code_start..].find("\""))
+        .expect("should have closing quote")
+        + code_start;
+    let code_string = &output[code_start..code_end];
+
+    // TS types should be stripped from the worklet code string
+    assert!(
+        !code_string.contains("Args"),
+        "TypeScript types should be stripped from worklet code string: {}",
+        code_string
+    );
+    assert!(
+        !code_string.contains("ReturnValue"),
+        "TypeScript return type should be stripped: {}",
+        code_string
+    );
+    assert!(
+        !code_string.contains(" as Error"),
+        "TypeScript 'as' assertion should be stripped: {}",
+        code_string
+    );
+    // Nullish coalescing should be lowered
+    assert!(
+        !code_string.contains("??"),
+        "Nullish coalescing should be lowered in worklet code string: {}",
+        code_string
+    );
+    insta::assert_snapshot!("worklet_strips_typescript", output);
+}
+
+#[test]
+fn worklet_in_constructor_function() {
+    // Simulates class constructor lowered to a regular function
+    let input = r#"
+function NativeReanimatedModule() {
+    this.workletsModule = WorkletsModule;
+    if (__DEV__) {
+        assertSingleReanimatedInstance();
+    }
+    runOnUISync(function initializeUI() {
+        'worklet';
+        registerReanimatedError();
+    });
+}
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet inside constructor function should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_in_constructor_function", output);
+}
+
+#[test]
+fn worklet_in_class_lowered_iife() {
+    // Class lowered to IIFE pattern by bundler
+    let input = r#"
+var NativeReanimatedModule = /* @__PURE__ */ function() {
+    function NativeReanimatedModule() {
+        this.workletsModule = WorkletsModule;
+        if (__DEV__) {
+            assertSingleReanimatedInstance();
+        }
+        runOnUISync(function initializeUI() {
+            "worklet";
+            registerReanimatedError();
+        });
+    }
+    return NativeReanimatedModule;
+}();
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet inside class-lowered IIFE should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_in_class_lowered_iife", output);
+}
+
+#[test]
+fn worklet_in_class_constructor() {
+    let input = r#"
+class NativeModule {
+    constructor() {
+        runOnUISync(function initializeUI() {
+            'worklet';
+            registerError();
+        });
+    }
+    someMethod() {
+        return 1;
+    }
+}
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet inside class constructor should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_in_class_constructor", output);
+}
+
+#[test]
+fn worklet_in_top_level_if() {
+    let input = r#"
+if (!SHOULD_BE_USE_WEB) {
+    runOnUISync(() => {
+        'worklet';
+        global._tagToJSPropNamesMapping = {};
+    });
+}
+"#;
+    let output = run_plugin(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet inside top-level if should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_in_top_level_if", output);
+}
+
+#[test]
+fn worklet_in_ts_as_expression() {
+    let input = r#"
+function cloneRegExp(value) {
+    const pattern = value.source;
+    const flags = value.flags;
+    const handle = cloneInitializer({
+        __init: () => {
+            'worklet';
+            return new RegExp(pattern, flags);
+        },
+    }) as unknown as SerializableRef;
+    return handle;
+}
+"#;
+    let output = run_plugin_ts(input);
+    assert!(
+        output.contains("__workletHash"),
+        "worklet inside TS as expression should be transformed: {}",
+        output
+    );
+    insta::assert_snapshot!("worklet_in_ts_as_expression", output);
 }

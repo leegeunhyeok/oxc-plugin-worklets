@@ -1,0 +1,35 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_7085952631645_init_data = {
+	code: "(function initializeUI_null1(){var registerError=this.__closure.registerError;registerError();})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function initializeUI_null1(){const{registerError}=this.__closure;registerError()});\"],\"mappings\":\"CAAC,SAAS,oBAAoB,CAAC,KAAK,CAAC,eAAe,KAAK,UAAU,eAAe\"}"
+};
+class NativeModule {
+	constructor() {
+		runOnUISync(function initializeUI_null1Factory({ _worklet_7085952631645_init_data, registerError }) {
+			const _e = [
+				new global.Error(),
+				-2,
+				-27
+			];
+			const initializeUI = function() {
+				registerError();
+			};
+			initializeUI.__closure = { registerError };
+			initializeUI.__workletHash = 7085952631645;
+			initializeUI.__pluginVersion = "x.y.z";
+			initializeUI.__initData = _worklet_7085952631645_init_data;
+			initializeUI.__stackDetails = _e;
+			return initializeUI;
+		}({
+			_worklet_7085952631645_init_data,
+			registerError
+		}));
+	}
+	someMethod() {
+		return 1;
+	}
+}

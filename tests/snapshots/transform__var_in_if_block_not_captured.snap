@@ -2,11 +2,12 @@
 source: tests/transform.rs
 expression: output
 ---
-const _worklet_8584571801988_init_data = {
-	code: "(function foo_null1(x){if(x>0){var result=x*2}return result})",
-	location: "/dev/null"
+const _worklet_5873295554980_init_data = {
+	code: "(function foo_null1(x){if(x>0){var result=x*2;}return result;})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function foo_null1(x){if(x>0){var result=x*2}return result});\"],\"mappings\":\"CAAC,SAAS,UAAU,EAAE,CAAC,GAAG,EAAE,EAAE,CAAC,IAAI,OAAO,EAAE,EAAE,OAAO\"}"
 };
-const foo = function foo_null1Factory({ _worklet_8584571801988_init_data }) {
+const foo = function foo_null1Factory({ _worklet_5873295554980_init_data }) {
 	const _e = [
 		new global.Error(),
 		1,
@@ -19,9 +20,9 @@ const foo = function foo_null1Factory({ _worklet_8584571801988_init_data }) {
 		return result;
 	};
 	foo.__closure = {};
-	foo.__workletHash = 8584571801988;
+	foo.__workletHash = 5873295554980;
 	foo.__pluginVersion = "x.y.z";
-	foo.__initData = _worklet_8584571801988_init_data;
+	foo.__initData = _worklet_5873295554980_init_data;
 	foo.__stackDetails = _e;
 	return foo;
-}({ _worklet_8584571801988_init_data });
+}({ _worklet_5873295554980_init_data });

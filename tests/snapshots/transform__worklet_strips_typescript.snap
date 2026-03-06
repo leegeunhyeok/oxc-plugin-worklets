@@ -1,0 +1,30 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_10219978015952_init_data = {
+	code: "(function callGuard_null1(fn,...args){try{return fn(...args);}catch(error){var message=error.message,stack=error.stack;console.log(message,stack!==null&&stack!==void 0?stack:\"\");}})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function callGuard_null1(fn:(...args:Args)=>ReturnValue,...args:Args){try{return fn(...args)}catch(error){const{message,stack}=error as Error;console.log(message,stack??``)}});\"],\"mappings\":\"CAAC,SAAS,gBAAgB,GAA+B,GAAG,KAAU,CAAC,GAAG,CAAC,OAAO,GAAG,GAAG,KAAK,OAAO,MAAM,CAAC,KAAK,CAAC,QAAQ,OAAO,MAAe,QAAQ,IAAI,QAAQ,OAAO,GAAG\"}"
+};
+const callGuard = function callGuard_null1Factory({ _worklet_10219978015952_init_data }) {
+	const _e = [
+		new global.Error(),
+		1,
+		-27
+	];
+	const callGuard = function(fn: (...args: Args) => ReturnValue, ...args: Args) {
+		try {
+			return fn(...args);
+		} catch (error) {
+			const { message, stack } = error as Error;
+			console.log(message, stack ?? "");
+		}
+	};
+	callGuard.__closure = {};
+	callGuard.__workletHash = 0x94b8628c4d0;
+	callGuard.__pluginVersion = "x.y.z";
+	callGuard.__initData = _worklet_10219978015952_init_data;
+	callGuard.__stackDetails = _e;
+	return callGuard;
+}({ _worklet_10219978015952_init_data });

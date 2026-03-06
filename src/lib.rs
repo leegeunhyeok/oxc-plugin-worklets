@@ -1,5 +1,6 @@
 mod autoworkletization;
 mod closure;
+mod es5_lowering;
 mod gesture_handler_autoworkletization;
 mod globals;
 mod layout_animation_autoworkletization;
@@ -10,11 +11,54 @@ use std::collections::HashSet;
 
 pub use options::PluginOptions;
 
+use std::sync::LazyLock;
+
+static WORKLET_PATTERNS: LazyLock<aho_corasick::AhoCorasick> = LazyLock::new(|| {
+    aho_corasick::AhoCorasick::new([
+        // Explicit worklet directive, __workletClass, __workletContextObject
+        "worklet",
+        // Autoworkletizable hooks
+        "useAnimatedStyle",
+        "useAnimatedProps",
+        "useAnimatedScrollHandler",
+        "useAnimatedReaction",
+        "useFrameCallback",
+        "useDerivedValue",
+        "createAnimatedPropAdapter",
+        "withTiming",
+        "withSpring",
+        "withDecay",
+        "withRepeat",
+        "withCallback",
+        "runOnUI",
+        "runOnJS",
+        "executeOnUIRuntimeSync",
+        "scheduleOnUI",
+        // Gesture handler hooks
+        "Gesture.",
+    ])
+    .expect("invalid patterns")
+});
+
+/// Fast string-level pre-check before parsing.
+/// Returns `true` if the source code might contain patterns that need worklet transformation.
+/// Use this to skip expensive AST parsing when the file clearly has no worklets.
+///
+/// Uses Aho-Corasick for SIMD-accelerated single-pass multi-pattern matching.
+pub fn may_contain_worklets(code: &str) -> bool {
+    WORKLET_PATTERNS.is_match(code)
+}
+
+use std::path::Path;
+
 use oxc::allocator::{Allocator, Box as OxcBox, CloneIn};
 use oxc::ast::ast::*;
 use oxc::ast::AstBuilder;
 use oxc::codegen::{Codegen, CodegenOptions};
+use oxc::parser::Parser;
+use oxc::semantic::SemanticBuilder;
 use oxc::span::{SourceType, SPAN};
+use oxc::transformer::{TransformOptions, Transformer};
 
 use crate::autoworkletization::{
     get_args_to_workletize, is_reanimated_function_hook, is_reanimated_object_hook,
@@ -23,9 +67,7 @@ use crate::closure::{get_closure, get_closure_arrow};
 use crate::gesture_handler_autoworkletization::is_gesture_object_event_callback_method;
 use crate::globals::build_globals;
 use crate::layout_animation_autoworkletization::is_layout_animation_callback_method;
-use crate::types::{
-    CONTEXT_OBJECT_MARKER, PLUGIN_VERSION, WORKLET_CLASS_FACTORY_SUFFIX, WORKLET_CLASS_MARKER,
-};
+use crate::types::{CONTEXT_OBJECT_MARKER, WORKLET_CLASS_FACTORY_SUFFIX, WORKLET_CLASS_MARKER};
 use crate::worklet_factory::{hash, make_worklet_name};
 
 #[derive(Debug)]
@@ -145,17 +187,15 @@ fn process_statement<'a>(
                 let replacement = transform_worklet_class(class, stmt_idx, ctx)?;
                 let ast = AstBuilder::new(ctx.allocator);
                 let mut stmts = ast.vec_from_iter(replacement);
-                // Replace the current statement with the first one,
-                // we'll need to handle the second one differently
                 if stmts.len() == 2 {
                     let second = stmts.pop().unwrap();
                     *stmt = stmts.pop().unwrap();
-                    // We need to insert the second statement after the current one.
-                    // Use a special approach: store it as a pending insertion at stmt_idx + 1
                     ctx.pending_insertions.push((stmt_idx + 1, second));
                 } else if stmts.len() == 1 {
                     *stmt = stmts.pop().unwrap();
                 }
+            } else {
+                process_inner_worklets_in_class(&mut class.body, stmt_idx, ctx)?;
             }
         }
         Statement::ExportDefaultDeclaration(export) => {
@@ -205,7 +245,11 @@ fn process_statement<'a>(
                 }
             }
         }
-        _ => {}
+        // For all other statement types (IfStatement, BlockStatement, ForStatement, etc.),
+        // delegate to process_inner_stmt which handles recursive traversal.
+        _ => {
+            process_inner_stmt(stmt, stmt_idx, ctx)?;
+        }
     }
     Ok(())
 }
@@ -261,6 +305,58 @@ fn process_expression<'a>(
                 }
             }
         }
+        Expression::ArrayExpression(arr) => {
+            for elem in arr.elements.iter_mut() {
+                match elem {
+                    ArrayExpressionElement::SpreadElement(spread) => {
+                        process_expression(&mut spread.argument, stmt_idx, ctx)?;
+                    }
+                    _ => {
+                        if let Some(expr) = elem.as_expression_mut() {
+                            process_expression(expr, stmt_idx, ctx)?;
+                        }
+                    }
+                }
+            }
+        }
+        Expression::AwaitExpression(await_expr) => {
+            process_expression(&mut await_expr.argument, stmt_idx, ctx)?;
+        }
+        Expression::YieldExpression(yield_expr) => {
+            if let Some(arg) = &mut yield_expr.argument {
+                process_expression(arg, stmt_idx, ctx)?;
+            }
+        }
+        Expression::NewExpression(new_expr) => {
+            for arg in new_expr.arguments.iter_mut() {
+                process_argument(arg, stmt_idx, ctx)?;
+            }
+        }
+        Expression::UnaryExpression(unary) => {
+            process_expression(&mut unary.argument, stmt_idx, ctx)?;
+        }
+        Expression::ParenthesizedExpression(paren) => {
+            process_expression(&mut paren.expression, stmt_idx, ctx)?;
+        }
+        Expression::ClassExpression(class) => {
+            process_inner_worklets_in_class(&mut class.body, stmt_idx, ctx)?;
+        }
+        // TypeScript wrapper expressions — unwrap and recurse
+        Expression::TSAsExpression(ts) => {
+            process_expression(&mut ts.expression, stmt_idx, ctx)?;
+        }
+        Expression::TSSatisfiesExpression(ts) => {
+            process_expression(&mut ts.expression, stmt_idx, ctx)?;
+        }
+        Expression::TSNonNullExpression(ts) => {
+            process_expression(&mut ts.expression, stmt_idx, ctx)?;
+        }
+        Expression::TSTypeAssertion(ts) => {
+            process_expression(&mut ts.expression, stmt_idx, ctx)?;
+        }
+        Expression::TSInstantiationExpression(ts) => {
+            process_expression(&mut ts.expression, stmt_idx, ctx)?;
+        }
         _ => {}
     }
     Ok(())
@@ -309,18 +405,118 @@ fn process_call_expression<'a>(
         }
     }
 
-    // Recurse into callee for chained calls
-    if let Expression::CallExpression(callee_call) = &mut call.callee {
-        process_call_expression(callee_call, stmt_idx, ctx)?;
-    }
-
-    // Recurse into arguments for nested calls
-    for arg in call.arguments.iter_mut() {
-        if let Argument::CallExpression(inner) = arg {
-            process_call_expression(inner, stmt_idx, ctx)?;
+    // Recurse into callee for chained calls and IIFE patterns
+    match &mut call.callee {
+        Expression::CallExpression(callee_call) => {
+            process_call_expression(callee_call, stmt_idx, ctx)?;
         }
+        Expression::FunctionExpression(func) => {
+            // IIFE: (function() { ... })()
+            process_inner_worklets_in_function(func, stmt_idx, ctx)?;
+        }
+        Expression::ArrowFunctionExpression(arrow) => {
+            // IIFE: (() => { ... })()
+            process_inner_worklets_in_arrow(arrow, stmt_idx, ctx)?;
+        }
+        _ => {}
     }
 
+    // Recurse into arguments for nested worklets
+    for arg in call.arguments.iter_mut() {
+        process_argument(arg, stmt_idx, ctx)?;
+    }
+
+    Ok(())
+}
+
+/// Process an argument for worklet directives and nested worklets.
+/// Mirrors `process_expression` but operates on `Argument` enum variants.
+fn process_argument<'a>(
+    arg: &mut Argument<'a>,
+    stmt_idx: usize,
+    ctx: &mut WorkletsVisitor<'a>,
+) -> Result<(), WorkletsError> {
+    match arg {
+        Argument::ArrowFunctionExpression(arrow) => {
+            if has_worklet_directive_fn_body(&arrow.body) {
+                process_inner_worklets_in_arrow(arrow, stmt_idx, ctx)?;
+                let replacement = transform_worklet_arrow(arrow, stmt_idx, ctx)?;
+                *arg = Argument::from(replacement);
+                return Ok(());
+            }
+            process_inner_worklets_in_arrow(arrow, stmt_idx, ctx)?;
+        }
+        Argument::FunctionExpression(func) => {
+            if has_worklet_directive(func.body.as_ref()) {
+                process_inner_worklets_in_function(func, stmt_idx, ctx)?;
+                let func_name = func.id.as_ref().map(|id| id.name.as_str());
+                let factory_call = build_factory_call(func, func_name, stmt_idx, ctx)?;
+                let ast = AstBuilder::new(ctx.allocator);
+                *arg = Argument::from(Expression::CallExpression(ast.alloc(factory_call)));
+                return Ok(());
+            }
+            process_inner_worklets_in_function(func, stmt_idx, ctx)?;
+        }
+        Argument::CallExpression(call) => {
+            process_call_expression(call, stmt_idx, ctx)?;
+        }
+        Argument::ObjectExpression(obj) => {
+            for prop in obj.properties.iter_mut() {
+                if let ObjectPropertyKind::ObjectProperty(p) = prop {
+                    process_expression(&mut p.value, stmt_idx, ctx)?;
+                }
+            }
+        }
+        Argument::ConditionalExpression(cond) => {
+            process_expression(&mut cond.consequent, stmt_idx, ctx)?;
+            process_expression(&mut cond.alternate, stmt_idx, ctx)?;
+        }
+        Argument::SequenceExpression(seq) => {
+            for inner in seq.expressions.iter_mut() {
+                process_expression(inner, stmt_idx, ctx)?;
+            }
+        }
+        Argument::AssignmentExpression(assign) => {
+            process_expression(&mut assign.right, stmt_idx, ctx)?;
+        }
+        Argument::LogicalExpression(logical) => {
+            process_expression(&mut logical.right, stmt_idx, ctx)?;
+        }
+        Argument::ArrayExpression(arr) => {
+            for elem in arr.elements.iter_mut() {
+                match elem {
+                    ArrayExpressionElement::SpreadElement(spread) => {
+                        process_expression(&mut spread.argument, stmt_idx, ctx)?;
+                    }
+                    _ => {
+                        if let Some(expr) = elem.as_expression_mut() {
+                            process_expression(expr, stmt_idx, ctx)?;
+                        }
+                    }
+                }
+            }
+        }
+        Argument::AwaitExpression(await_expr) => {
+            process_expression(&mut await_expr.argument, stmt_idx, ctx)?;
+        }
+        Argument::YieldExpression(yield_expr) => {
+            if let Some(arg) = &mut yield_expr.argument {
+                process_expression(arg, stmt_idx, ctx)?;
+            }
+        }
+        Argument::NewExpression(new_expr) => {
+            for arg in new_expr.arguments.iter_mut() {
+                process_argument(arg, stmt_idx, ctx)?;
+            }
+        }
+        Argument::UnaryExpression(unary) => {
+            process_expression(&mut unary.argument, stmt_idx, ctx)?;
+        }
+        Argument::ParenthesizedExpression(paren) => {
+            process_expression(&mut paren.expression, stmt_idx, ctx)?;
+        }
+        _ => {}
+    }
     Ok(())
 }
 
@@ -372,6 +568,36 @@ fn has_worklet_directive_fn_body(body: &FunctionBody) -> bool {
 }
 
 // --- Inner worklet processing ---
+
+fn process_inner_worklets_in_class<'a>(
+    class_body: &mut ClassBody<'a>,
+    stmt_idx: usize,
+    ctx: &mut WorkletsVisitor<'a>,
+) -> Result<(), WorkletsError> {
+    for element in class_body.body.iter_mut() {
+        match element {
+            ClassElement::MethodDefinition(method) => {
+                if let Some(body) = &mut method.value.body {
+                    for stmt in body.statements.iter_mut() {
+                        process_inner_stmt(stmt, stmt_idx, ctx)?;
+                    }
+                }
+            }
+            ClassElement::PropertyDefinition(prop) => {
+                if let Some(value) = &mut prop.value {
+                    process_expression(value, stmt_idx, ctx)?;
+                }
+            }
+            ClassElement::StaticBlock(block) => {
+                for stmt in block.body.iter_mut() {
+                    process_inner_stmt(stmt, stmt_idx, ctx)?;
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
 
 fn process_inner_worklets_in_function<'a>(
     func: &mut Function<'a>,
@@ -450,6 +676,59 @@ fn process_inner_stmt<'a>(
                 process_inner_stmt(s, stmt_idx, ctx)?;
             }
         }
+        Statement::ForStatement(for_stmt) => {
+            if let Some(ForStatementInit::VariableDeclaration(decl)) = &mut for_stmt.init {
+                for d in decl.declarations.iter_mut() {
+                    if let Some(init) = &mut d.init {
+                        process_expression(init, stmt_idx, ctx)?;
+                    }
+                }
+            }
+            process_inner_stmt(&mut for_stmt.body, stmt_idx, ctx)?;
+        }
+        Statement::ForInStatement(for_in) => {
+            process_inner_stmt(&mut for_in.body, stmt_idx, ctx)?;
+        }
+        Statement::ForOfStatement(for_of) => {
+            process_inner_stmt(&mut for_of.body, stmt_idx, ctx)?;
+        }
+        Statement::WhileStatement(while_stmt) => {
+            process_inner_stmt(&mut while_stmt.body, stmt_idx, ctx)?;
+        }
+        Statement::DoWhileStatement(do_while) => {
+            process_inner_stmt(&mut do_while.body, stmt_idx, ctx)?;
+        }
+        Statement::SwitchStatement(switch) => {
+            for case in switch.cases.iter_mut() {
+                for s in case.consequent.iter_mut() {
+                    process_inner_stmt(s, stmt_idx, ctx)?;
+                }
+            }
+        }
+        Statement::TryStatement(try_stmt) => {
+            for s in try_stmt.block.body.iter_mut() {
+                process_inner_stmt(s, stmt_idx, ctx)?;
+            }
+            if let Some(handler) = &mut try_stmt.handler {
+                for s in handler.body.body.iter_mut() {
+                    process_inner_stmt(s, stmt_idx, ctx)?;
+                }
+            }
+            if let Some(finalizer) = &mut try_stmt.finalizer {
+                for s in finalizer.body.iter_mut() {
+                    process_inner_stmt(s, stmt_idx, ctx)?;
+                }
+            }
+        }
+        Statement::LabeledStatement(labeled) => {
+            process_inner_stmt(&mut labeled.body, stmt_idx, ctx)?;
+        }
+        Statement::ThrowStatement(throw) => {
+            process_expression(&mut throw.argument, stmt_idx, ctx)?;
+        }
+        Statement::ClassDeclaration(class) => {
+            process_inner_worklets_in_class(&mut class.body, stmt_idx, ctx)?;
+        }
         _ => {}
     }
     Ok(())
@@ -494,8 +773,13 @@ fn transform_worklet_arrow<'a>(
     ctx.worklet_number += 1;
     let (worklet_name, react_name) = make_worklet_name(None, &ctx.filename, wn);
 
-    let code_string =
-        generate_worklet_code_string_from_arrow(ctx.allocator, arrow, &worklet_name, &closure_vars);
+    let (code_string, source_map_json) = generate_worklet_code_string_from_arrow(
+        ctx.allocator,
+        arrow,
+        &worklet_name,
+        &closure_vars,
+        &ctx.filename,
+    );
     let worklet_hash = hash(&code_string);
 
     let ast = AstBuilder::new(ctx.allocator);
@@ -527,6 +811,7 @@ fn transform_worklet_arrow<'a>(
         react_name,
         worklet_name,
         code_string,
+        source_map_json,
         worklet_hash,
         &closure_vars,
         stmt_idx,
@@ -552,12 +837,13 @@ fn build_factory_call<'a>(
     ctx.worklet_number += 1;
     let (worklet_name, react_name) = make_worklet_name(func_name, &ctx.filename, wn);
 
-    let code_string = generate_worklet_code_string_from_function(
+    let (code_string, source_map_json) = generate_worklet_code_string_from_function(
         ctx.allocator,
         func,
         &worklet_name,
         &closure_vars,
         func_name,
+        &ctx.filename,
     );
     let worklet_hash = hash(&code_string);
 
@@ -590,6 +876,7 @@ fn build_factory_call<'a>(
         react_name,
         worklet_name,
         code_string,
+        source_map_json,
         worklet_hash,
         &closure_vars,
         stmt_idx,
@@ -603,6 +890,7 @@ fn build_factory_call_inner<'a>(
     react_name: &'a str,
     worklet_name: &'a str,
     code_string: &'a str,
+    source_map_json: Option<String>,
     worklet_hash: u64,
     closure_vars: &[String],
     stmt_idx: usize,
@@ -618,6 +906,7 @@ fn build_factory_call_inner<'a>(
             &ast,
             init_data_name,
             code_string,
+            source_map_json,
             &ctx.filename,
             is_release,
             &ctx.options,
@@ -671,11 +960,12 @@ fn build_factory_call_inner<'a>(
     ));
 
     if !is_release {
+        let version: &'a str = ctx.allocator.alloc_str(&ctx.options.plugin_version);
         stmts.push(build_member_assign_string(
             &ast,
             react_name,
             "__pluginVersion",
-            PLUGIN_VERSION,
+            version,
         ));
     }
 
@@ -796,18 +1086,26 @@ fn build_factory_call_inner<'a>(
 
 // --- Code generation ---
 
+/// Returns `(code_string, source_map_json)`.
 fn generate_worklet_code_string_from_function(
     _allocator: &Allocator,
     func: &Function<'_>,
     worklet_name: &str,
     closure_vars: &[String],
     original_name: Option<&str>,
-) -> String {
+    filename: &str,
+) -> (String, Option<String>) {
     let temp_alloc = Allocator::default();
     let ast = AstBuilder::new(&temp_alloc);
 
     let params = func.params.clone_in(&temp_alloc);
-    let body = func.body.clone_in(&temp_alloc);
+    let mut body = func.body.clone_in(&temp_alloc);
+
+    // Inject closure and recursion declarations into the function body AST
+    // so they go through transform_worklet_code (TS strip + ES lowering).
+    if let Some(ref mut body) = body {
+        prepend_closure_and_recursion(&ast, &temp_alloc, body, closure_vars, original_name);
+    }
 
     let wf = ast.function(
         SPAN,
@@ -835,26 +1133,33 @@ fn generate_worklet_code_string_from_function(
         ast.vec1(stmt),
     );
 
-    let code = Codegen::new()
+    let raw_code = Codegen::new()
         .with_options(CodegenOptions::minify())
         .build(&program)
         .code;
+    let (code, source_map) = transform_worklet_code(&raw_code, filename);
     let code = code.trim_end_matches(';');
 
-    inject_closure_and_recursion(code, closure_vars, original_name)
+    (code.to_string(), source_map)
 }
 
+/// Returns `(code_string, source_map_json)`.
 fn generate_worklet_code_string_from_arrow(
     _allocator: &Allocator,
     arrow: &ArrowFunctionExpression<'_>,
     worklet_name: &str,
     closure_vars: &[String],
-) -> String {
+    filename: &str,
+) -> (String, Option<String>) {
     let temp_alloc = Allocator::default();
     let ast = AstBuilder::new(&temp_alloc);
 
     let params = arrow.params.clone_in(&temp_alloc);
-    let body = arrow.body.clone_in(&temp_alloc);
+    let mut body = arrow.body.clone_in(&temp_alloc);
+
+    // Inject closure declarations into the function body AST
+    // so they go through transform_worklet_code (TS strip + ES lowering).
+    prepend_closure_and_recursion(&ast, &temp_alloc, &mut body, closure_vars, None);
 
     let wf = ast.function(
         SPAN,
@@ -882,52 +1187,157 @@ fn generate_worklet_code_string_from_arrow(
         ast.vec1(stmt),
     );
 
-    let code = Codegen::new()
+    let raw_code = Codegen::new()
         .with_options(CodegenOptions::minify())
         .build(&program)
         .code;
+    let (code, source_map) = transform_worklet_code(&raw_code, filename);
     let code = code.trim_end_matches(';');
 
-    inject_closure_and_recursion(code, closure_vars, None)
+    (code.to_string(), source_map)
 }
 
-fn inject_closure_and_recursion(
-    code: &str,
-    closure_vars: &[String],
-    original_name: Option<&str>,
-) -> String {
-    if closure_vars.is_empty() && original_name.is_none() {
-        return code.to_string();
+/// Applies TS strip and ES5 syntax lowering to a worklet code string.
+/// Corresponds to `workletTransformSync` in the Babel plugin which re-runs
+/// Babel with `@babel/preset-typescript` and user-provided presets/plugins.
+///
+/// 1. oxc: strips TypeScript syntax
+/// 2. SWC: lowers ES2015+ to ES5 (arrow functions, template literals,
+///    shorthand properties, destructuring, const/let → var)
+///
+/// Returns `(code, source_map_json)`.
+fn transform_worklet_code(code: &str, filename: &str) -> (String, Option<String>) {
+    let alloc = Allocator::default();
+    let source_type = SourceType::tsx();
+    let ret = Parser::new(&alloc, code, source_type).parse();
+
+    if !ret.errors.is_empty() {
+        return (code.to_string(), None);
     }
 
-    if let Some(brace_pos) = code.find('{') {
-        let mut result = String::with_capacity(code.len() + 100);
-        result.push_str(&code[..=brace_pos]);
+    let mut program = ret.program;
+    let semantic_ret = SemanticBuilder::new().build(&program);
+    let transform_options = TransformOptions {
+        typescript: Default::default(),
+        ..Default::default()
+    };
+    let _ = Transformer::new(&alloc, Path::new(""), &transform_options)
+        .build_with_scoping(semantic_ret.semantic.into_scoping(), &mut program);
 
-        if !closure_vars.is_empty() {
-            result.push_str("const{");
-            for (i, var) in closure_vars.iter().enumerate() {
-                if i > 0 {
-                    result.push(',');
-                }
-                result.push_str(var);
-            }
-            result.push_str("}=this.__closure;");
+    // Generate source map from oxc (before SWC lowering, as SWC operates on
+    // its own AST and would lose oxc source mapping).
+    let codegen_options = CodegenOptions {
+        source_map_path: Some(std::path::PathBuf::from(filename)),
+        ..CodegenOptions::minify()
+    };
+    let result = Codegen::new().with_options(codegen_options).build(&program);
+
+    let source_map_json = result.map.map(|sm| sm.to_json_string());
+
+    // ES5 lowering via SWC
+    let code = es5_lowering::lower_to_es5(&result.code);
+
+    (code, source_map_json)
+}
+
+/// Prepends `const { a, b } = this.__closure;` and optionally
+/// `const funcName = this._recur;` into the function body AST,
+/// so these statements go through ES lowering in `transform_worklet_code`.
+fn prepend_closure_and_recursion<'a>(
+    ast: &AstBuilder<'a>,
+    alloc: &'a Allocator,
+    body: &mut FunctionBody<'a>,
+    closure_vars: &[String],
+    original_name: Option<&str>,
+) {
+    let mut prepend = Vec::new();
+
+    // const { a, b } = this.__closure;
+    if !closure_vars.is_empty() {
+        let props = ast.vec_from_iter(closure_vars.iter().map(|var| {
+            let name: &'a str = alloc.alloc_str(var);
+            ast.binding_property(
+                SPAN,
+                ast.property_key_static_identifier(SPAN, name),
+                ast.binding_pattern_binding_identifier(SPAN, name),
+                true,  // shorthand
+                false, // computed
+            )
+        }));
+        let pattern = ast.binding_pattern_object_pattern(SPAN, props, None::<BindingRestElement>);
+        let rhs = Expression::StaticMemberExpression(ast.alloc(ast.static_member_expression(
+            SPAN,
+            ast.expression_this(SPAN),
+            ast.identifier_name(SPAN, "__closure"),
+            false,
+        )));
+        let decl = ast.variable_declaration(
+            SPAN,
+            VariableDeclarationKind::Const,
+            ast.vec1(ast.variable_declarator(
+                SPAN,
+                VariableDeclarationKind::Const,
+                pattern,
+                None::<TSTypeAnnotation>,
+                Some(rhs),
+                false,
+            )),
+            false,
+        );
+        prepend.push(Statement::from(Declaration::VariableDeclaration(
+            ast.alloc(decl),
+        )));
+    }
+
+    // const funcName = this._recur;
+    if let Some(name) = original_name {
+        // Only add if the function body actually references the name.
+        // Build a temporary program to check via codegen.
+        let temp_prog = ast.program(
+            SPAN,
+            SourceType::mjs(),
+            "",
+            ast.vec(),
+            None,
+            ast.vec(),
+            body.statements.clone_in(alloc),
+        );
+        let body_code = Codegen::new()
+            .with_options(CodegenOptions::minify())
+            .build(&temp_prog)
+            .code;
+        if body_code.contains(name) {
+            let name: &'a str = alloc.alloc_str(name);
+            let rhs = Expression::StaticMemberExpression(ast.alloc(ast.static_member_expression(
+                SPAN,
+                ast.expression_this(SPAN),
+                ast.identifier_name(SPAN, "_recur"),
+                false,
+            )));
+            let decl = ast.variable_declaration(
+                SPAN,
+                VariableDeclarationKind::Const,
+                ast.vec1(ast.variable_declarator(
+                    SPAN,
+                    VariableDeclarationKind::Const,
+                    ast.binding_pattern_binding_identifier(SPAN, name),
+                    None::<TSTypeAnnotation>,
+                    Some(rhs),
+                    false,
+                )),
+                false,
+            );
+            prepend.push(Statement::from(Declaration::VariableDeclaration(
+                ast.alloc(decl),
+            )));
         }
+    }
 
-        if let Some(name) = original_name {
-            let body_part = &code[brace_pos + 1..];
-            if body_part.contains(name) {
-                result.push_str("const ");
-                result.push_str(name);
-                result.push_str("=this._recur;");
-            }
+    if !prepend.is_empty() {
+        // Insert at the beginning of the function body
+        for (i, stmt) in prepend.into_iter().enumerate() {
+            body.statements.insert(i, stmt);
         }
-
-        result.push_str(&code[brace_pos + 1..]);
-        result
-    } else {
-        code.to_string()
     }
 }
 
@@ -957,6 +1367,7 @@ fn build_init_data_declaration<'a>(
     ast: &AstBuilder<'a>,
     init_data_name: &'a str,
     code_string: &'a str,
+    source_map_json: Option<String>,
     filename: &str,
     is_release: bool,
     options: &PluginOptions,
@@ -996,6 +1407,21 @@ fn build_init_data_declaration<'a>(
             false,
             false,
         ));
+    }
+
+    if !is_release && !options.disable_source_maps {
+        if let Some(sm_json) = source_map_json {
+            let sm_str: &'a str = allocator.alloc_str(&sm_json);
+            props.push(ast.object_property_kind_object_property(
+                SPAN,
+                PropertyKind::Init,
+                ast.property_key_static_identifier(SPAN, "sourceMap"),
+                ast.expression_string_literal(SPAN, sm_str, None),
+                false,
+                false,
+                false,
+            ));
+        }
     }
 
     let obj = ast.expression_object(SPAN, props);

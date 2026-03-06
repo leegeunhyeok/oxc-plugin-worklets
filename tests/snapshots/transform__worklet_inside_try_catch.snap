@@ -1,0 +1,51 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_10776350582569_init_data = {
+	code: "(function null2(){return 2;})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function null2(){return 2});\"],\"mappings\":\"CAAC,SAAS,OAAO,CAAC,MAAO\"}"
+};
+const _worklet_16463388434953_init_data = {
+	code: "(function null1(){return 1;})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function null1(){return 1});\"],\"mappings\":\"CAAC,SAAS,OAAO,CAAC,MAAO\"}"
+};
+function init() {
+	try {
+		const w = function null1Factory({ _worklet_16463388434953_init_data }) {
+			const _e = [
+				new global.Error(),
+				1,
+				-27
+			];
+			const null1 = function() {
+				return 1;
+			};
+			null1.__closure = {};
+			null1.__workletHash = 0xef92e6b6209;
+			null1.__pluginVersion = "x.y.z";
+			null1.__initData = _worklet_16463388434953_init_data;
+			null1.__stackDetails = _e;
+			return null1;
+		}({ _worklet_16463388434953_init_data });
+	} catch (e) {
+		const handler = function null2Factory({ _worklet_10776350582569_init_data }) {
+			const _e = [
+				new global.Error(),
+				1,
+				-27
+			];
+			const null2 = function() {
+				return 2;
+			};
+			null2.__closure = {};
+			null2.__workletHash = 0x9cd108c6729;
+			null2.__pluginVersion = "x.y.z";
+			null2.__initData = _worklet_10776350582569_init_data;
+			null2.__stackDetails = _e;
+			return null2;
+		}({ _worklet_10776350582569_init_data });
+	}
+}

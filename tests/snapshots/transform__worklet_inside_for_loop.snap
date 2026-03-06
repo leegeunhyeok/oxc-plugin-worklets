@@ -1,0 +1,32 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_3105266708645_init_data = {
+	code: "(function null1(){var i=this.__closure.i;return i;})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function null1(){const{i}=this.__closure;return i});\"],\"mappings\":\"CAAC,SAAS,OAAO,CAAC,KAAK,CAAC,GAAG,KAAK,UAAU,OAAO\"}"
+};
+function setup() {
+	for (let i = 0; i < 10; i++) {
+		const w = function null1Factory({ _worklet_3105266708645_init_data, i }) {
+			const _e = [
+				new global.Error(),
+				-2,
+				-27
+			];
+			const null1 = function() {
+				return i;
+			};
+			null1.__closure = { i };
+			null1.__workletHash = 3105266708645;
+			null1.__pluginVersion = "x.y.z";
+			null1.__initData = _worklet_3105266708645_init_data;
+			null1.__stackDetails = _e;
+			return null1;
+		}({
+			_worklet_3105266708645_init_data,
+			i
+		});
+	}
+}

@@ -2,11 +2,12 @@
 source: tests/transform.rs
 expression: output
 ---
-const _worklet_3019361411460_init_data = {
-	code: "(function foo_null1(){const{doSomething}=this.__closure;try{doSomething()}catch(error){if(globalThis.handler){var message=error.message,stack=error.stack;globalThis.handler(message,stack)}}})",
-	location: "/dev/null"
+const _worklet_7100283626319_init_data = {
+	code: "(function foo_null1(){var doSomething=this.__closure.doSomething;try{doSomething();}catch(error){if(globalThis.handler){var message=error.message,stack=error.stack;globalThis.handler(message,stack);}}})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function foo_null1(){const{doSomething}=this.__closure;try{doSomething()}catch(error){if(globalThis.handler){var message=error.message,stack=error.stack;globalThis.handler(message,stack)}}});\"],\"mappings\":\"CAAC,SAAS,WAAW,CAAC,KAAK,CAAC,aAAa,KAAK,UAAU,GAAG,CAAC,aAAa,OAAO,MAAM,CAAC,GAAG,WAAW,QAAQ,CAAC,IAAI,QAAQ,MAAM,QAAQ,MAAM,MAAM,MAAM,WAAW,QAAQ,QAAQ,MAAM\"}"
 };
-const foo = function foo_null1Factory({ _worklet_3019361411460_init_data, doSomething }) {
+const foo = function foo_null1Factory({ _worklet_7100283626319_init_data, doSomething }) {
 	const _e = [
 		new global.Error(),
 		-2,
@@ -23,12 +24,12 @@ const foo = function foo_null1Factory({ _worklet_3019361411460_init_data, doSome
 		}
 	};
 	foo.__closure = { doSomething };
-	foo.__workletHash = 3019361411460;
+	foo.__workletHash = 7100283626319;
 	foo.__pluginVersion = "x.y.z";
-	foo.__initData = _worklet_3019361411460_init_data;
+	foo.__initData = _worklet_7100283626319_init_data;
 	foo.__stackDetails = _e;
 	return foo;
 }({
-	_worklet_3019361411460_init_data,
+	_worklet_7100283626319_init_data,
 	doSomething
 });

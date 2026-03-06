@@ -1,0 +1,34 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_5145138647477_init_data = {
+	code: "(function initializeUI_null1(){var registerReanimatedError=this.__closure.registerReanimatedError;registerReanimatedError();})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function initializeUI_null1(){const{registerReanimatedError}=this.__closure;registerReanimatedError()});\"],\"mappings\":\"CAAC,SAAS,oBAAoB,CAAC,KAAK,CAAC,yBAAyB,KAAK,UAAU,yBAAyB\"}"
+};
+function NativeReanimatedModule() {
+	this.workletsModule = WorkletsModule;
+	if (__DEV__) {
+		assertSingleReanimatedInstance();
+	}
+	runOnUISync(function initializeUI_null1Factory({ _worklet_5145138647477_init_data, registerReanimatedError }) {
+		const _e = [
+			new global.Error(),
+			-2,
+			-27
+		];
+		const initializeUI = function() {
+			registerReanimatedError();
+		};
+		initializeUI.__closure = { registerReanimatedError };
+		initializeUI.__workletHash = 5145138647477;
+		initializeUI.__pluginVersion = "x.y.z";
+		initializeUI.__initData = _worklet_5145138647477_init_data;
+		initializeUI.__stackDetails = _e;
+		return initializeUI;
+	}({
+		_worklet_5145138647477_init_data,
+		registerReanimatedError
+	}));
+}

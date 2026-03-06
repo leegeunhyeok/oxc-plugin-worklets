@@ -1,0 +1,37 @@
+---
+source: tests/transform.rs
+expression: output
+---
+const _worklet_6996218374734_init_data = {
+	code: "(function null1(){var _this___closure=this.__closure,pattern=_this___closure.pattern,flags=_this___closure.flags;return new RegExp(pattern,flags);})",
+	location: "/dev/null",
+	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function null1(){const{pattern,flags}=this.__closure;return new RegExp(pattern,flags)});\"],\"mappings\":\"CAAC,SAAS,OAAO,CAAC,KAAK,CAAC,QAAQ,OAAO,KAAK,UAAU,OAAO,IAAI,OAAO,QAAQ,MAAM\"}"
+};
+function cloneRegExp(value) {
+	const pattern = value.source;
+	const flags = value.flags;
+	const handle = (cloneInitializer({ __init: function null1Factory({ _worklet_6996218374734_init_data, pattern, flags }) {
+		const _e = [
+			new global.Error(),
+			-3,
+			-27
+		];
+		const null1 = function() {
+			return new RegExp(pattern, flags);
+		};
+		null1.__closure = {
+			pattern,
+			flags
+		};
+		null1.__workletHash = 6996218374734;
+		null1.__pluginVersion = "x.y.z";
+		null1.__initData = _worklet_6996218374734_init_data;
+		null1.__stackDetails = _e;
+		return null1;
+	}({
+		_worklet_6996218374734_init_data,
+		pattern,
+		flags
+	}) }) as unknown) as SerializableRef;
+	return handle;
+}
