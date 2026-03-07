@@ -45,4 +45,4 @@ release version:
     cargo check
     # Stage and commit
     git add Cargo.toml Cargo.lock
-    git commit -m "chore: release crates v{{version}}"
+    git commit -m "chore: release crates {{version}}"
