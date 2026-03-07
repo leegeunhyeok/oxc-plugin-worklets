@@ -5,7 +5,7 @@ expression: output
 const _worklet_7100283626319_init_data = {
 	code: "(function foo_null1(){var doSomething=this.__closure.doSomething;try{doSomething();}catch(error){if(globalThis.handler){var message=error.message,stack=error.stack;globalThis.handler(message,stack);}}})",
 	location: "/dev/null",
-	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function foo_null1(){const{doSomething}=this.__closure;try{doSomething()}catch(error){if(globalThis.handler){var message=error.message,stack=error.stack;globalThis.handler(message,stack)}}});\"],\"mappings\":\"CAAC,SAAS,WAAW,CAAC,KAAK,CAAC,aAAa,KAAK,UAAU,GAAG,CAAC,aAAa,OAAO,MAAM,CAAC,GAAG,WAAW,QAAQ,CAAC,IAAI,QAAQ,MAAM,QAAQ,MAAM,MAAM,MAAM,WAAW,QAAQ,QAAQ,MAAM\"}"
+	sourceMap: "{\"version\":3,\"sources\":[\"/dev/null\"],\"names\":[],\"mappings\":\"AAAA,CAAC,SAAS,YAAY,IAAK,AAAC,YAAa,IAAI,CAAC,SAAS,CAA3B,YAA4B,GAAG,CAAC,cAAa,CAAC,MAAM,MAAM,CAAC,GAAG,WAAW,OAAO,CAAC,CAAC,IAAI,QAAQ,MAAM,OAAO,CAAC,MAAM,MAAM,KAAK,CAAC,WAAW,OAAO,CAAC,QAAQ,OAAM,CAAC,CAAC,CAAC\"}"
 };
 const foo = function foo_null1Factory({ _worklet_7100283626319_init_data, doSomething }) {
 	const _e = [

@@ -5,7 +5,7 @@ expression: output
 const _worklet_3105266708645_init_data = {
 	code: "(function null1(){var i=this.__closure.i;return i;})",
 	location: "/dev/null",
-	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function null1(){const{i}=this.__closure;return i});\"],\"mappings\":\"CAAC,SAAS,OAAO,CAAC,KAAK,CAAC,GAAG,KAAK,UAAU,OAAO\"}"
+	sourceMap: "{\"version\":3,\"sources\":[\"/dev/null\"],\"names\":[],\"mappings\":\"AAAA,CAAC,SAAS,QAAQ,IAAK,AAAC,EAAG,IAAI,CAAC,SAAS,CAAjB,EAAkB,OAAO,EAAC,CAAC\"}"
 };
 function setup() {
 	for (let i = 0; i < 10; i++) {

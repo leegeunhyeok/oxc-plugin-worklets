@@ -5,7 +5,7 @@ expression: output
 const _worklet_14294829041264_init_data = {
 	code: "(function null1(){return{bar:function(){return\"bar\";}};})",
 	location: "/dev/null",
-	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function null1(){return{bar(){return`bar`}}});\"],\"mappings\":\"CAAC,SAAS,OAAO,CAAC,MAAM,CAAC,KAAK,CAAC,MAAM,OAAO\"}"
+	sourceMap: "{\"version\":3,\"sources\":[\"/dev/null\"],\"names\":[],\"mappings\":\"AAAA,CAAC,SAAS,QAAQ,MAAM,CAAC,IAAA,WAAM,MAAM,MAAK,CAAC,EAAC,CAAC\"}"
 };
 const foo = {
 	bar() {

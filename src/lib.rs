@@ -1,25 +1,21 @@
 mod autoworkletization;
 mod closure;
-mod es5_lowering;
 mod gesture_handler_autoworkletization;
 mod globals;
+mod hermes_compat;
 mod layout_animation_autoworkletization;
 mod options;
 mod types;
 mod worklet_factory;
 
 use std::collections::HashSet;
-use std::path::Path;
 use std::sync::LazyLock;
 
 use oxc::allocator::{Allocator, Box as OxcBox, CloneIn};
 use oxc::ast::ast::*;
 use oxc::ast::AstBuilder;
 use oxc::codegen::{Codegen, CodegenOptions};
-use oxc::parser::Parser;
-use oxc::semantic::SemanticBuilder;
 use oxc::span::{SourceType, SPAN};
-use oxc::transformer::{TransformOptions, Transformer};
 
 pub use options::WorkletsOptions;
 
@@ -1200,43 +1196,11 @@ fn generate_worklet_code_string_from_arrow(
 /// Corresponds to `workletTransformSync` in the Babel plugin which re-runs
 /// Babel with `@babel/preset-typescript` and user-provided presets/plugins.
 ///
-/// 1. oxc: strips TypeScript syntax
-/// 2. SWC: lowers ES2015+ to ES5 (arrow functions, template literals,
-///    shorthand properties, destructuring, const/let → var)
+/// SWC handles both TypeScript stripping and ES5 lowering in a single pass.
 ///
 /// Returns `(code, source_map_json)`.
 fn transform_worklet_code(code: &str, filename: &str) -> (String, Option<String>) {
-    let alloc = Allocator::default();
-    let source_type = SourceType::tsx();
-    let ret = Parser::new(&alloc, code, source_type).parse();
-
-    if !ret.errors.is_empty() {
-        return (code.to_string(), None);
-    }
-
-    let mut program = ret.program;
-    let semantic_ret = SemanticBuilder::new().build(&program);
-    let transform_options = TransformOptions {
-        typescript: Default::default(),
-        ..Default::default()
-    };
-    let _ = Transformer::new(&alloc, Path::new(""), &transform_options)
-        .build_with_scoping(semantic_ret.semantic.into_scoping(), &mut program);
-
-    // Generate source map from oxc (before SWC lowering, as SWC operates on
-    // its own AST and would lose oxc source mapping).
-    let codegen_options = CodegenOptions {
-        source_map_path: Some(std::path::PathBuf::from(filename)),
-        ..CodegenOptions::minify()
-    };
-    let result = Codegen::new().with_options(codegen_options).build(&program);
-
-    let source_map_json = result.map.map(|sm| sm.to_json_string());
-
-    // ES5 lowering via SWC
-    let code = es5_lowering::lower_to_es5(&result.code);
-
-    (code, source_map_json)
+    hermes_compat::lower_to_es5_with_source_map(code, Some(filename))
 }
 
 /// Prepends `const { a, b } = this.__closure;` and optionally

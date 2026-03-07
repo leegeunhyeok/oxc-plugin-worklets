@@ -1,10 +1,10 @@
-//! ES5 lowering for worklet code strings using SWC.
+//! Hermes-compatible syntax lowering for worklet code strings.
+//!
+//! Strips TypeScript and lowers ES2015+ to ES5-level syntax that the
+//! Hermes engine (React Native) can execute directly.
 //!
 //! Corresponds to `workletTransformSync` in the Babel plugin which re-runs
 //! Babel with `@babel/preset-typescript` and user-provided presets/plugins.
-//!
-//! oxc's transformer only supports limited ES lowering (arrow functions, etc.),
-//! so we use SWC's ES2015–ES2021 compat transforms for full ES5 output.
 
 use std::sync::LazyLock;
 
@@ -15,17 +15,19 @@ use swc_ecma_compat_es2015::{arrow, block_scoping, destructuring, shorthand, tem
 use swc_ecma_compat_es2018::object_rest_spread;
 use swc_ecma_compat_es2020::{nullish_coalescing, optional_chaining};
 use swc_ecma_compat_es2021::logical_assignments;
-use swc_ecma_parser::{Parser, StringInput, Syntax};
+use swc_ecma_parser::{Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_transforms_base::{fixer::fixer, helpers, hygiene::hygiene, resolver};
+use swc_ecma_transforms_typescript::typescript::strip as strip_typescript;
 
 /// Shared SWC Globals instance, created once per process.
 /// This avoids repeated creation and potential conflicts with Rolldown's
 /// own SWC Globals when running in the same process.
 static SWC_GLOBALS: LazyLock<swc_common::Globals> = LazyLock::new(swc_common::Globals::new);
 
-/// Lowers ES2015+ syntax in a worklet code string to ES5.
+/// Strips TypeScript syntax and lowers ES2015+ syntax to ES5.
 ///
 /// Applies:
+/// - TypeScript: type annotations, enums, namespaces → stripped
 /// - ES2015: arrow functions, template literals, shorthand properties,
 ///   destructuring, block scoping (const/let → var)
 /// - ES2018: object rest/spread (must run before destructuring)
@@ -33,49 +35,60 @@ static SWC_GLOBALS: LazyLock<swc_common::Globals> = LazyLock::new(swc_common::Gl
 /// - ES2021: logical assignments (??=, &&=, ||=)
 ///
 /// Returns the lowered code string.
-pub fn lower_to_es5(code: &str) -> String {
+#[cfg(test)]
+fn lower_to_es5(code: &str) -> String {
+    lower_to_es5_with_source_map(code, None).0
+}
+
+/// Strips TypeScript and lowers ES2015+ to ES5.
+/// If `filename` is provided, a source map JSON string is also returned.
+pub fn lower_to_es5_with_source_map(
+    code: &str,
+    filename: Option<&str>,
+) -> (String, Option<String>) {
     GLOBALS.set(&SWC_GLOBALS, || {
         let helpers = helpers::Helpers::new(false);
-        helpers::HELPERS.set(&helpers, || lower_to_es5_inner(code))
+        helpers::HELPERS.set(&helpers, || lower_to_es5_inner(code, filename))
     })
 }
 
-fn lower_to_es5_inner(code: &str) -> String {
+fn lower_to_es5_inner(code: &str, filename: Option<&str>) -> (String, Option<String>) {
     let cm: Lrc<SourceMap> = Default::default();
-    let fm = cm.new_source_file(Lrc::new(FileName::Anon), code.to_string());
+    let source_file_name = filename
+        .map(|f| FileName::Real(f.into()))
+        .unwrap_or(FileName::Anon);
+    let fm = cm.new_source_file(Lrc::new(source_file_name), code.to_string());
 
     let mut parser = Parser::new(
-        Syntax::Es(Default::default()),
+        Syntax::Typescript(TsSyntax {
+            tsx: true,
+            ..Default::default()
+        }),
         StringInput::from(&*fm),
         None,
     );
 
     let mut program = match parser.parse_program() {
         Ok(p) => p,
-        Err(_) => return code.to_string(),
+        Err(_) => return (code.to_string(), None),
     };
 
     let unresolved_mark = Mark::new();
     let top_level_mark = Mark::new();
-
-    // Apply transforms: resolver → ES2021/2020/2018/2015 lowering →
-    //   inject_helpers → hygiene → fixer
     let mut pass = (
         resolver(unresolved_mark, top_level_mark, false),
-        // ES2021
-        logical_assignments(),
-        // ES2020
-        optional_chaining(Default::default(), unresolved_mark),
-        nullish_coalescing(Default::default()),
-        // ES2018 (must run before ES2015 destructuring)
-        object_rest_spread(Default::default()),
-        // ES2015
-        shorthand(),
-        template_literal(Default::default()),
-        arrow(unresolved_mark),
-        destructuring(Default::default()),
-        block_scoping(unresolved_mark),
-        // Inject helper functions (e.g. _slicedToArray) inline
+        strip_typescript(unresolved_mark, top_level_mark),
+        (
+            logical_assignments(),
+            optional_chaining(Default::default(), unresolved_mark),
+            nullish_coalescing(Default::default()),
+            object_rest_spread(Default::default()),
+            shorthand(),
+            template_literal(Default::default()),
+            arrow(unresolved_mark),
+            destructuring(Default::default()),
+            block_scoping(unresolved_mark),
+        ),
         helpers::inject_helpers(unresolved_mark),
         hygiene(),
         fixer(None),
@@ -88,20 +101,41 @@ fn lower_to_es5_inner(code: &str) -> String {
     // function expression's body so they're self-contained.
     move_helpers_into_function_body(&mut program);
 
-    // Codegen (minified)
+    // Codegen (minified, with optional source map)
     let mut buf = Vec::new();
+    let mut src_map_buf = if filename.is_some() {
+        Some(Vec::new())
+    } else {
+        None
+    };
+
     {
-        let wr = JsWriter::new(cm.clone(), "\n", &mut buf, None);
+        let wr = JsWriter::new(cm.clone(), "\n", &mut buf, src_map_buf.as_mut());
         let mut emitter = Emitter {
             cfg: swc_ecma_codegen::Config::default().with_minify(true),
-            cm,
+            cm: cm.clone(),
             comments: None,
             wr: Box::new(wr),
         };
         emitter.emit_program(&program).expect("SWC codegen failed");
     }
 
-    String::from_utf8(buf).unwrap_or_else(|_| code.to_string())
+    let code_out = String::from_utf8(buf).unwrap_or_else(|_| code.to_string());
+
+    let source_map_json = src_map_buf.and_then(|src_map| {
+        let mut sm_buf = Vec::new();
+        (*cm)
+            .build_source_map(
+                &src_map,
+                None,
+                swc_common::source_map::DefaultSourceMapGenConfig,
+            )
+            .to_writer(&mut sm_buf)
+            .ok()?;
+        String::from_utf8(sm_buf).ok()
+    });
+
+    (code_out, source_map_json)
 }
 
 /// Moves top-level helper function declarations (injected by `inject_helpers`)

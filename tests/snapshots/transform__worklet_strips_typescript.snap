@@ -5,7 +5,7 @@ expression: output
 const _worklet_10219978015952_init_data = {
 	code: "(function callGuard_null1(fn,...args){try{return fn(...args);}catch(error){var message=error.message,stack=error.stack;console.log(message,stack!==null&&stack!==void 0?stack:\"\");}})",
 	location: "/dev/null",
-	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function callGuard_null1(fn:(...args:Args)=>ReturnValue,...args:Args){try{return fn(...args)}catch(error){const{message,stack}=error as Error;console.log(message,stack??``)}});\"],\"mappings\":\"CAAC,SAAS,gBAAgB,GAA+B,GAAG,KAAU,CAAC,GAAG,CAAC,OAAO,GAAG,GAAG,KAAK,OAAO,MAAM,CAAC,KAAK,CAAC,QAAQ,OAAO,MAAe,QAAQ,IAAI,QAAQ,OAAO,GAAG\"}"
+	sourceMap: "{\"version\":3,\"sources\":[\"/dev/null\"],\"names\":[],\"mappings\":\"AAAA,CAAC,SAAS,gBAAgB,EAA8B,CAAC,GAAG,IAAS,EAAE,GAAG,CAAC,OAAO,MAAM,MAAK,CAAC,MAAM,MAAM,CAAC,IAAM,QAAe,MAAf,QAAQ,MAAO,MAAP,MAAsB,QAAQ,GAAG,CAAC,QAAQ,cAAA,eAAA,MAAO,IAAG,CAAC,CAAC\"}"
 };
 const callGuard = function callGuard_null1Factory({ _worklet_10219978015952_init_data }) {
 	const _e = [

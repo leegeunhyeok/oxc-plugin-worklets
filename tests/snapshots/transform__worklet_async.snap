@@ -5,7 +5,7 @@ expression: output
 const _worklet_3389766325603_init_data = {
 	code: "(async function foo_null1(){var bar=this.__closure.bar;await bar();})",
 	location: "/dev/null",
-	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(async function foo_null1(){const{bar}=this.__closure;await bar()});\"],\"mappings\":\"CAAC,eAAe,WAAW,CAAC,KAAK,CAAC,KAAK,KAAK,UAAU,MAAM,KAAK\"}"
+	sourceMap: "{\"version\":3,\"sources\":[\"/dev/null\"],\"names\":[],\"mappings\":\"AAAA,CAAC,eAAe,YAAY,IAAK,AAAC,IAAK,IAAI,CAAC,SAAS,CAAnB,IAAoB,MAAM,MAAK,CAAC\"}"
 };
 const foo = function foo_null1Factory({ _worklet_3389766325603_init_data, bar }) {
 	const _e = [

@@ -6,7 +6,7 @@ const a = 1;
 const _worklet_12252751925087_init_data = {
 	code: "(function foo_null1(x){var a=this.__closure.a;return x+a;})",
 	location: "/dev/null",
-	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function foo_null1(x){const{a}=this.__closure;return x+a});\"],\"mappings\":\"CAAC,SAAS,UAAU,EAAE,CAAC,KAAK,CAAC,GAAG,KAAK,UAAU,OAAO,EAAE\"}"
+	sourceMap: "{\"version\":3,\"sources\":[\"/dev/null\"],\"names\":[],\"mappings\":\"AAAA,CAAC,SAAS,UAAU,CAAC,EAAE,IAAK,AAAC,EAAG,IAAI,CAAC,SAAS,CAAjB,EAAkB,OAAO,EAAE,EAAC,CAAC\"}"
 };
 const foo = function foo_null1Factory({ _worklet_12252751925087_init_data, a }) {
 	const _e = [

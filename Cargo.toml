@@ -9,12 +9,13 @@ repository = "https://github.com/leegeunhyeok/oxc-react-native-worklets"
 [dependencies]
 oxc = { version = "0.115.0", features = ["full"] }
 aho-corasick = "1"
-swc_common = "19.0.0"
+swc_common = { version = "19.0.0", features = ["sourcemap"] }
 swc_ecma_parser = "35.0.0"
 swc_ecma_codegen = "24.0.0"
 swc_ecma_ast = "21.0.0"
 swc_ecma_visit = "21.0.0"
 swc_ecma_transforms_base = { version = "38.0.0", features = ["inline-helpers"] }
+swc_ecma_transforms_typescript = "42.0.0"
 swc_ecma_compat_es2015 = "43.0.0"
 swc_ecma_compat_es2020 = "41.0.0"
 swc_ecma_compat_es2021 = "39.0.0"

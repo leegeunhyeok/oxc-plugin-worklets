@@ -5,7 +5,7 @@ expression: output
 const _worklet_1645857113606_init_data = {
 	code: "(function null1(){global._tagToJSPropNamesMapping={};})",
 	location: "/dev/null",
-	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function null1(){global._tagToJSPropNamesMapping={}});\"],\"mappings\":\"CAAC,SAAS,OAAO,CAAC,OAAO,yBAAyB,EAAE\"}"
+	sourceMap: "{\"version\":3,\"sources\":[\"/dev/null\"],\"names\":[],\"mappings\":\"AAAA,CAAC,SAAS,QAAQ,OAAO,wBAAwB,CAAC,CAAC,EAAC,CAAC\"}"
 };
 if (!SHOULD_BE_USE_WEB) {
 	runOnUISync(function null1Factory({ _worklet_1645857113606_init_data }) {

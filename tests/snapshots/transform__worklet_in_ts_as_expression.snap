@@ -5,7 +5,7 @@ expression: output
 const _worklet_6996218374734_init_data = {
 	code: "(function null1(){var _this___closure=this.__closure,pattern=_this___closure.pattern,flags=_this___closure.flags;return new RegExp(pattern,flags);})",
 	location: "/dev/null",
-	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function null1(){const{pattern,flags}=this.__closure;return new RegExp(pattern,flags)});\"],\"mappings\":\"CAAC,SAAS,OAAO,CAAC,KAAK,CAAC,QAAQ,OAAO,KAAK,UAAU,OAAO,IAAI,OAAO,QAAQ,MAAM\"}"
+	sourceMap: "{\"version\":3,\"sources\":[\"/dev/null\"],\"names\":[],\"mappings\":\"AAAA,CAAC,SAAS,QAAQ,IAAqB,gBAAA,IAAI,CAAC,SAAS,CAA7B,QAAe,gBAAf,QAAQ,MAAO,gBAAP,MAAsB,OAAO,IAAI,OAAO,QAAQ,OAAM,CAAC\"}"
 };
 function cloneRegExp(value) {
 	const pattern = value.source;

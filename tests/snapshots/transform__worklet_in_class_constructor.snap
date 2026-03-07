@@ -5,7 +5,7 @@ expression: output
 const _worklet_7085952631645_init_data = {
 	code: "(function initializeUI_null1(){var registerError=this.__closure.registerError;registerError();})",
 	location: "/dev/null",
-	sourceMap: "{\"version\":3,\"names\":[],\"sources\":[\"/dev/null\"],\"sourcesContent\":[\"(function initializeUI_null1(){const{registerError}=this.__closure;registerError()});\"],\"mappings\":\"CAAC,SAAS,oBAAoB,CAAC,KAAK,CAAC,eAAe,KAAK,UAAU,eAAe\"}"
+	sourceMap: "{\"version\":3,\"sources\":[\"/dev/null\"],\"names\":[],\"mappings\":\"AAAA,CAAC,SAAS,qBAAqB,IAAK,AAAC,cAAe,IAAI,CAAC,SAAS,CAA7B,cAA8B,gBAAe,CAAC\"}"
 };
 class NativeModule {
 	constructor() {
