@@ -100,7 +100,7 @@ name = "bench_oxc"
 version = "0.0.0"
 dependencies = [
  "oxc",
- "oxc_plugin_worklets",
+ "oxc_react_native_worklets",
 ]
 
 [[package]]
@@ -933,7 +933,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "oxc_plugin_worklets"
+name = "oxc_react_native_worklets"
 version = "0.1.0"
 dependencies = [
  "aho-corasick",

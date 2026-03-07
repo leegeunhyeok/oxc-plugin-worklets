@@ -1,4 +1,4 @@
-# oxc-plugin-worklets
+# oxc-react-native-worklets
 
 A Rust port of React Native Reanimated's [worklets Babel plugin](https://github.com/software-mansion/react-native-reanimated/tree/main/packages/react-native-worklets/plugin), built on top of [oxc](https://oxc.rs/).
 
@@ -47,10 +47,10 @@ just release 0.2.0
 
 Measured on Apple M1 Pro, 100 iterations over a [fixture](bench/fixture.ts) containing ~20 worklet patterns.
 
-|                              |        Total | Avg / transform |  Speedup |
-| ---------------------------- | -----------: | --------------: | -------: |
-| react-native-worklets/plugin |   7156.04 ms |        71.56 ms |       1x |
-| **oxc_plugin_worklets**      | **85.81 ms** |     **0.86 ms** | **~83x** |
+|                               |        Total | Avg / transform |  Speedup |
+| ----------------------------- | -----------: | --------------: | -------: |
+| react-native-worklets/plugin  |   7156.04 ms |        71.56 ms |       1x |
+| **oxc_react_native_worklets** | **85.81 ms** |     **0.86 ms** | **~83x** |
 
 ```bash
 just bench # run benchmark
@@ -63,7 +63,7 @@ just bench # run benchmark
 ```rust
 use oxc::allocator::Allocator;
 use oxc::ast::ast::Program;
-use oxc_plugin_worklets::{WorkletsVisitor, WorkletsOptions};
+use oxc_react_native_worklets::{WorkletsVisitor, WorkletsOptions};
 
 fn example(allocator: &Allocator, program: &mut Program<'_>) {
     let opts = WorkletsOptions {

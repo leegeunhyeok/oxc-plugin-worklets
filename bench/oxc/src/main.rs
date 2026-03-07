@@ -8,7 +8,7 @@ use oxc::codegen::Codegen;
 use oxc::parser::Parser;
 use oxc::span::SourceType;
 
-use oxc_plugin_worklets::{WorkletsOptions, WorkletsVisitor};
+use oxc_react_native_worklets::{WorkletsOptions, WorkletsVisitor};
 
 fn main() {
     let n: u32 = env::args()
